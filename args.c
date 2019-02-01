@@ -1,7 +1,12 @@
 
-#include "args.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <string.h>
 
+
+#include "args.h"
+#include "str_misc.h"
 
 
 t_args get_args(int argc, char **argv)

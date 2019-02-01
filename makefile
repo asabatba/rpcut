@@ -1,3 +1,3 @@
 
 rpcut:
-	gcc -o xp xp.c str_misc.c -I.
+	gcc -o xp xp.c args.c str_misc.c -I.

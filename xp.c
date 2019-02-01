@@ -7,9 +7,6 @@
 #include "args.h"
 #include "str_misc.h"
 
-
-
-#define copy_until(dest, source, tok) copy_until_n(dest, source, tok, 0)
 // #include <unistd.h>
 
 // #include "args.h"

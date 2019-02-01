@@ -1,5 +1,5 @@
 
-
+#define copy_until(dest, source, tok) copy_until_n(dest, source, tok, 0)
 
 void str_to_alpha(char *input);
 
