@@ -26,6 +26,8 @@
 
 #define ELEMENT_HASH_MASK (ELEMENT_HASH_SIZE - 1)
 
+#define OUTPUT_TREE_ELEMENT 1 // crea el fichero tree.txt
+
 typedef uint16_t hash_t;
 typedef uint32_t oid_t;
 
@@ -647,6 +649,133 @@ char *get_next_tag(Buffer *source)
   return start;
 }
 
+void ele_decider()
+{
+
+  size_t i;
+  int16_t depth;
+
+  Element *iter;
+  Element *jter;
+  Ref *kter;
+
+  FILE *tree_xml;
+
+  if (OUTPUT_TREE_ELEMENT)
+  {
+    printf("Se genera el fichero tree.txt...\n"); // DEBUG ARBOL
+    tree_xml = fopen("tree.txt", "wb");           // DEBUG ARBOL
+    assert(tree_xml);                             // DEBUG ARBOL
+  }
+
+  for (i = 0; root_elements[i]; i++)
+  {
+    iter = root_elements[i];
+    // printf("\n->%s [%s]", iter->tag->tagname, iter->tag->appname);
+    depth = 0;
+
+    if (tagname_is(iter, "PresentationCatalog"))
+    {
+      if (iter && iter->physical)
+      {
+        // printf("SA '%s' -> DB '%s'\n", iter->tag->appname, iter->physical->tag->appname);
+      }
+    }
+
+    if (iter->physical && iter->physical->removal == 1)
+    {
+      // printf("*Se marca %s (%s) a causa de %s (%s)\n", iter->appname, iter->tagname, iter->physical->appname, iter->physical->tagname);
+      iter->removal = 1;
+    }
+
+    if (iter->removal == 1)
+    {
+
+      printf("->%s [%s]", iter->tagname, iter->elename);
+      printf("<-(eliminado)!\n");
+
+      if (tagname_is(iter, "ConnectionPool"))
+      {
+        for (kter = iter->ref; kter; kter = kter->next_to)
+        {
+          if (tagname_is(kter->from, "InitBlock"))
+          {
+            kter->from->removal = 1;
+          }
+        }
+      }
+
+      for (jter = iter; 1;)
+      {
+        // printf("%s has sibling %x and parent %x\n", jtag->tagname, jtag->sibling, jtag->parent);
+
+        if (OUTPUT_TREE_ELEMENT)
+          fprintf(tree_xml, "%.*s%s (id=%lu)\n", depth, "\t\t\t\t\t", jter->tagname, jter->id); // DEBUG ARBOL
+        jter->removal = 1;
+
+        ref_erase_all(jter);
+
+        if (jter->child)
+        {
+          jter = jter->child;
+          depth++;
+        }
+        else if (jter->sibling)
+        {
+          jter = jter->sibling;
+        }
+        else
+        {
+          while (!jter->sibling && jter->parent)
+          {
+            jter = jter->parent;
+            if (OUTPUT_TREE_ELEMENT)
+              fprintf(tree_xml, "\n"); // DEBUG ARBOL
+            depth--;
+          }
+          if (!jter->sibling && !jter->parent)
+            break;
+          jter = jter->sibling;
+        }
+      }
+    }
+  }
+  if (OUTPUT_TREE_ELEMENT)
+  {
+    fclose(tree_xml); // DEBUG ARBOL
+    printf("Finalizado fichero tree.txt");
+  }
+
+  return;
+}
+
+// guarda los elementos que no tienen el marcador "removal" en el xml de salida
+void save_xml(FILE *oxml, Element *first_tag, Buffer *input_buffer)
+{
+  // el output!
+  Element *tag_iter;
+  size_t i;
+
+  for (tag_iter = first_tag; tag_iter; tag_iter = tag_iter->next_tag)
+  {
+    // printf("->%lu", tag_iter->id);
+    if (!tag_iter->removal)
+    {
+      fwrite(tag_iter->raw, 1, tag_iter->rawsize, oxml);
+      // printf("%s\n", tag_iter->raw);
+      fwrite("\n", 1, 1, oxml);
+    }
+  }
+
+  input_buffer->buffer = strstr(input_buffer->buffer, "<");
+  for (i = 0; *input_buffer->buffer; i++)
+  {
+    //printf("->(%c)[%u]\n", *input_buffer->buffer, *input_buffer->buffer);
+    fputc(*input_buffer->buffer, oxml);
+    ++input_buffer->buffer;
+  }
+  return;
+}
 
 // Funcion que busca y maneja referencias dentro de cada elemento
 char *parse_refs(char *cur, Element *ctag)
@@ -672,7 +801,7 @@ char *parse_refs(char *cur, Element *ctag)
       break;
     cur = lt;
 
-    // tag tipo CDATA (no nos interesa)
+    // tag tipo CDATA (NO nos interesa)
     if (strncmp(cur, "<![CDATA[", 9) == 0)
     {
       cur = strstr(cur, "]]>");
@@ -680,7 +809,7 @@ char *parse_refs(char *cur, Element *ctag)
       continue;
     }
 
-    // tag tipo comentario (no nos interesa)
+    // tag tipo comentario (NO nos interesa)
     if (strncmp(cur, "<!--", 4) == 0)
     {
       cur = strstr(cur, "-->");
@@ -1077,7 +1206,6 @@ int main(int argc, char **argv)
   for (i = 0; input_buffer->buffer != header_end; i++)
   {
     fputc(*input_buffer->buffer, oxml);
-    //printf("char %c\n", *input_buffer->buffer);
     ++input_buffer->buffer;
   }
   fputc('\n', oxml);
@@ -1146,119 +1274,22 @@ int main(int argc, char **argv)
     logical_table_source_parse(logical_table_source[i]);
   }
 
-  // printf("starting output tree.xml...\n"); // DEBUG ARBOL
-  // FILE *tree_xml = fopen("tree.xml", "wb"); // DEBUG ARBOL
-  // assert(tree_xml); // DEBUG ARBOL
-
-  int16_t depth;
-
-  Element *iter;
-  Element *jter;
-  Ref *kter;
-
-  uint32_t count = 0;
-  for (iter = first_tag /*first_element[0]*/; iter; iter = iter->next_tag)
-  {
-    // printf("%lu\n", iter->id);
-    count++;
-  }
+  // uint32_t count = 0;
+  // for (iter = first_tag /*first_element[0]*/; iter; iter = iter->next_tag)
+  // {
+  //   count++;
+  // }
   // printf("afterloop\n");
   // printf("count: %lu elements", count);
 
   printf("\n-----\n");
-  for (i = 0; root_elements[i]; i++)
-  {
-    iter = root_elements[i];
-    // printf("\n->%s [%s]", iter->tag->tagname, iter->tag->appname);
-    depth = 0;
 
-    if (tagname_is(iter, "PresentationCatalog"))
-    {
-      if (iter && iter->physical)
-      {
-        // printf("SA '%s' -> DB '%s'\n", iter->tag->appname, iter->physical->tag->appname);
-      }
-    }
+  // decide que elementos se quedan y cuales se quitan
 
-    if (iter->physical && iter->physical->removal == 1)
-    {
-      // printf("*Se marca %s (%s) a causa de %s (%s)\n", iter->appname, iter->tagname, iter->physical->appname, iter->physical->tagname);
-      iter->removal = 1;
-    }
+  ele_decider();
 
-    if (iter->removal == 1)
-    {
-
-      printf("->%s [%s]", iter->tagname, iter->elename);
-      printf("<-(eliminado)!\n");
-
-      if (tagname_is(iter, "ConnectionPool"))
-      {
-        for (kter = iter->ref; kter; kter = kter->next_to)
-        {
-          if (tagname_is(kter->from, "InitBlock"))
-          {
-            kter->from->removal = 1;
-          }
-        }
-      }
-
-      for (jter = iter; 1;)
-      {
-        // printf("%s has sibling %x and parent %x\n", jtag->tagname, jtag->sibling, jtag->parent);
-
-        // fprintf(tree_xml, "%.*s%s (id=%lu)\n", depth, "\t\t\t\t\t", jter->tagname, jter->id); // DEBUG ARBOL
-        jter->removal = 1;
-
-        ref_erase_all(jter);
-
-        if (jter->child)
-        {
-          jter = jter->child;
-          depth++;
-        }
-        else if (jter->sibling)
-        {
-          jter = jter->sibling;
-        }
-        else
-        {
-          while (!jter->sibling && jter->parent)
-          {
-            jter = jter->parent;
-            // fprintf(tree_xml, "\n"); // DEBUG ARBOL
-            depth--;
-          }
-          if (!jter->sibling && !jter->parent)
-            break;
-          jter = jter->sibling;
-        }
-      }
-    }
-  }
-
-  // fclose(tree_xml); // DEBUG ARBOL
-
-  Element *tag_iter;
-
-  for (tag_iter = first_tag; tag_iter; tag_iter = tag_iter->next_tag)
-  {
-    // printf("->%lu", tag_iter->id);
-    if (!tag_iter->removal)
-    {
-      fwrite(tag_iter->raw, 1, tag_iter->rawsize, oxml);
-      // printf("%s\n", tag_iter->raw);
-      fwrite("\n", 1, 1, oxml);
-    }
-  }
-
-  input_buffer->buffer = strstr(input_buffer->buffer, "<");
-  for (i = 0; *input_buffer->buffer; i++)
-  {
-    //printf("->(%c)[%u]\n", *input_buffer->buffer, *input_buffer->buffer);
-    fputc(*input_buffer->buffer, oxml);
-    ++input_buffer->buffer;
-  }
+  // guarda el output teniendo en cuenta los elemntos que se quitan
+  save_xml(oxml, first_tag, input_buffer);
 
   fclose(oxml);
 
@@ -1273,7 +1304,7 @@ int main(int argc, char **argv)
 
   html_result(&arglist);
 
-  printf("\n-----\nHa finalizado la ejecucion (correctamente) tras %f segundos.\n", (double)(end - begin) / CLOCKS_PER_SEC);
+  printf("\n--***--\nHa finalizado la ejecucion (correctamente) tras %f segundos.\n", (double)(end - begin) / CLOCKS_PER_SEC);
 
   // printf("sizeof Tag: \nsizeof Ele: %I64u\nsizeof Ref: %I64u\n", sizeof(Element), sizeof(Ref));
 
