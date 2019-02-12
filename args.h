@@ -1,6 +1,5 @@
 
 
-
 typedef struct t_args
 {
   char *input;

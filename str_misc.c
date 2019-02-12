@@ -5,8 +5,6 @@
 
 #include "str_misc.h"
 
-
-
 // leaves only alphabet (a-z and A-Z)
 void str_to_alpha(char *input)
 {
@@ -39,8 +37,6 @@ void upper(char *input)
     input[i] = (input[i] >= 'a' && input[i] <= 'z') ? (input[i] - 'a' + 'A') : input[i];
   }
 }
-
-
 
 size_t char_count(char *string)
 {
@@ -123,13 +119,14 @@ unsigned long encode_id(char *strid)
   assert(second < power2(18));
   id = (first << 16) | second;*/
 
-//   assert(second < power2(30));
+  //   assert(second < power2(30));
 
-if (second >= power2(30)) {
+  if (second >= power2(30))
+  {
     printf("Error: Se ha pasado el limite de bits para la ID de los elementos\n");
     printf("Es posible que sea necesario modificar el tipo de 'typedef unsigned long oid_t;'\n");
-}
-  
+  }
+
   id = second; // fuck it, ignore first part of id
 
   // printf("%s -> %u and %u: %u\n", strid, first, second, id);
@@ -137,7 +134,6 @@ if (second >= power2(30)) {
   free(copy);
   return id;
 }
-
 
 // returns a character if said character c is equal to any of the characters in string 'alts' (NULL if not)
 char is_any_of(char c, char *alts)
@@ -162,7 +158,6 @@ char is_any_of(char c, char *alts)
   }
   return 0;
 }
-
 
 // copia todos los caracteres desde source hasta dest,
 //  hasta chocar contra algun token (o NULL char)
@@ -267,8 +262,6 @@ char *strip_whitespace(char *string)
   assert(new_string);
   return new_string;
 }
-
-
 
 // permanently modifies the string [source] so that everything
 //   between [start] and [end] is ignored

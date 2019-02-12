@@ -26,9 +26,7 @@
 #define ELEMENT_HASH_MASK (ELEMENT_HASH_SIZE - 1)
 typedef unsigned hash_t;
 
-
 typedef unsigned long oid_t;
-
 
 typedef struct Buffer
 {
@@ -39,7 +37,6 @@ typedef struct Buffer
   size_t size;
   //size_t chars_read;
 } Buffer;
-
 
 //no need to destroy really
 Buffer *file_to_buffer(char *filename)
@@ -102,10 +99,6 @@ char nextc(Buffer *b)
 
   return c;
 }
-
-
-
-
 
 struct PerfList
 {
@@ -492,7 +485,6 @@ void ref_erase_all(Element *ele)
   return;
 }
 
-
 int tagname_is(Element *ele, char *str)
 {
   if (!ele || !str || !ele->tagname)
@@ -521,9 +513,6 @@ int tag_is_root(Element *ctag)
 
   return 0;
 }
-
-
-
 
 // tries to guess what gar app the string [source] is
 //   and writes it to [dest]

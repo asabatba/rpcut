@@ -3,7 +3,6 @@
 
 void str_to_alpha(char *input);
 
-
 void left(char *input, int newlength);
 
 void upper(char *input);
@@ -31,4 +30,3 @@ char *ignore_between(char *string, char *start, char *end);
 char *strip_whitespace(char *string);
 
 char *skip_between(char *source, char *start, char *end);
-
