@@ -647,6 +647,103 @@ char *get_next_tag(Buffer *source)
   return start;
 }
 
+
+// Funcion que busca y maneja referencias dentro de cada elemento
+char *parse_refs(char *cur, Element *ctag)
+{
+
+  char *lt = 0; // pointer que indica la posicion del <
+  char *gt = 0; // pointer que indica la posicion del >
+
+  char strefid[MAX_TAG_NAME] = {0};
+
+  Element *ref_to;
+  Ref *new_ref;
+  oid_t refid;
+  size_t i;
+
+  // Ref-tags loop!
+  for (i = 0; *cur != '\0'; i++)
+  {
+
+    lt = strstr(cur, "<");
+
+    if (!lt)
+      break;
+    cur = lt;
+
+    // tag tipo CDATA (no nos interesa)
+    if (strncmp(cur, "<![CDATA[", 9) == 0)
+    {
+      cur = strstr(cur, "]]>");
+      assert(cur);
+      continue;
+    }
+
+    // tag tipo comentario (no nos interesa)
+    if (strncmp(cur, "<!--", 4) == 0)
+    {
+      cur = strstr(cur, "-->");
+      assert(cur);
+      continue;
+    }
+
+    // tag tipo Ref*** (nos interesa!)
+    if (strncmp(cur, "<Ref", 4) == 0)
+    {
+      gt = strstr(cur, ">");
+      cur = strstr(cur, " id=\"");
+
+      // comprobar que la id sea de la Ref y no nos hemos pasado
+      assert(gt > cur);
+      assert(cur);
+      cur = strchr(cur, '"');
+      ++cur;
+      cur = copy_until_n(strefid, cur, "\"", MAX_TAG_SIZE);
+
+      refid = encode_id(strefid);
+
+      assert(gt > cur);
+
+      cur = gt;
+
+      // caso especial de las refs de privilegepackage (2 en 1)
+      //
+      if (strncmp(lt + 1, "RefDatabase", 11) == 0 && tagname_is(ctag, "PrivilegePackage"))
+      {
+        // printf("{%.*s} ", 10,lt);
+        cur++;
+        cur = strchr(cur, '>');
+        assert(cur);
+        gt = cur;
+      }
+
+      if (tagname_is(ctag, "PresentationColumn"))
+      {
+        ctag->physical = ele_search(refid);
+        // assert(ctag->element->physical);
+      }
+
+      // buscar el elemento al que se hace referencia (crear uno nuevo si no lo encuentra)
+      ref_to = ele_merge(refid);
+      // añadir referencia
+      new_ref = ref_add(ctag, ref_to, lt, (size_t)(gt - lt + 1));
+      assert(new_ref);
+
+      if (tagname_is(ctag, "LogicalTableSource"))
+      {
+        logical_table_source_add(ctag);
+      }
+
+      assert(cur);
+      continue;
+    }
+
+    cur = strstr(cur, ">");
+  }
+  return cur;
+}
+
 Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
 {
   if (!raw)
@@ -670,7 +767,6 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
     name = malloc(MAX_TAG_SIZE + 1);
     tagname = malloc(MAX_TAG_NAME + 1);
     elename = malloc(ELEMENT_NAME_SIZE + 1);
-
   }
 
   *attrib = '\0';
@@ -678,7 +774,6 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
   *name = '\0';
   *tagname = '\0';
   *elename = '\0';
-
 
   assert(attrib);
 
@@ -735,95 +830,8 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
   // nombre de la etiqueta <etiqueta name="nombre">
   strncpy(ctag->tagname, tagname, MAX_TAG_NAME);
 
-  char *lt = 0; // pointer que indica la posicion del <
-  char *gt = 0; // pointer que indica la posicion del >
-  Element *ref_to;
-  Ref *new_ref;
-  oid_t refid;
-
-
-  // Ref-tags loop!
-  for (i = 0; *cur != '\0'; i++)
-  {
-
-    lt = strstr(cur, "<");
-
-    if (!lt)
-      break;
-    cur = lt;
-
-    // tag tipo CDATA (no nos interesa)
-    if (strncmp(cur, "<![CDATA[", 9) == 0)
-    {
-      cur = strstr(cur, "]]>");
-      assert(cur);
-      continue;
-    }
-
-    // tag tipo comentario (no nos interesa)
-    if (strncmp(cur, "<!--", 4) == 0)
-    {
-      cur = strstr(cur, "-->");
-      assert(cur);
-      continue;
-    }
-
-    // tag tipo Ref*** (nos interesa!)
-    if (strncmp(cur, "<Ref", 4) == 0)
-    {
-      gt = strstr(cur, ">");
-      cur = strstr(cur, " id=\"");
-      // comprobar que la id sea de la Ref y no nos hemos pasado
-      assert(gt > cur);
-      assert(cur);
-      cur = strchr(cur, '"');
-      ++cur;
-      cur = copy_until_n(value, cur, "\"", MAX_TAG_SIZE);
-
-      refid = encode_id(value);
-
-      assert(gt > cur);
-
-      cur = gt;
-
-      // caso especial de las refs de privilegepackage (2 en 1)
-      //
-      if (strncmp(lt + 1, "RefDatabase", 11) == 0 && tagname_is(ctag, "PrivilegePackage") )
-      {
-        // printf("{%.*s} ", 10,lt);
-        cur++;
-        cur = strchr(cur, '>');
-        assert(cur);
-        gt = cur;
-      }
-
-      if (tagname_is(ctag, "PresentationColumn"))
-      {
-        ctag->physical = ele_search(refid);
-        // assert(ctag->element->physical);
-      }
-
-      // buscar el elemento al que se hace referencia (crear uno nuevo si no lo encuentra)
-      ref_to = ele_merge(refid);
-      // añadir referencia 
-      new_ref = ref_add(ctag, ref_to, lt, (size_t)(gt - lt + 1));
-      assert(new_ref);
-
-      if (tagname_is(ctag, "LogicalTableSource"))
-      {
-        logical_table_source_add(ctag);
-      }
-
-
-      assert(cur);
-      continue;
-    }
-
-    cur = strstr(cur, ">");
-    // ++cur;
-
-    // cur = skip_all(cur, "> \t\n\r");
-  }
+  // funcion que maneja el tema de referencias (tags que empiezan por "Ref")
+  cur = parse_refs(cur, ctag);
 
   ctag->root = tag_is_root(ctag);
   if (ctag->root)
@@ -834,7 +842,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
     root_elements[i] = ctag;
   }
 
-  if (ctag->root == 1 && ctag->elename && *ctag->elename)
+  if (ctag->root && ctag->elename && *ctag->elename)
   {
     // printf("><\t name is : %s\n", name);
     extract_app(ctag->appname, ctag->elename);
@@ -842,13 +850,11 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
     if (!tagname_is(ctag, "BusinessModel") && !tagname_is(ctag, "PresentationCatalog") && str_in_list(ctag->appname, applist))
     {
       ctag->removal = 1;
-      // add_refid(ctag->id);
-      // add to kill tag list!!
     }
   }
   else if (ctag->root == 0 && pId)
   {
-    // ctag->parent = add_child(pId, ctag); CHANGE
+    // añadir elemento actual como hijo de pId
     assert(ele_add_child(pId, ctag));
   }
 
