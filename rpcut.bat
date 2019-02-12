@@ -1,5 +1,5 @@
 @echo off
-color 07
+color 0F
 
 set "xparser_exe=xpc"
 
@@ -17,10 +17,14 @@ IF NOT EXIST %~f1 goto rpdin_err
 echo Generando XML de entrada...
 call biserverxmlgen -P Admin123 -R %~f1 -O .\%~n1.xml -8 || goto xmlgen_err
 
+color 0A
+
 echo Recortando XML...
 call %xparser_exe% -i %~n1.xml -o %~n2.xml -a %~3 || goto xparser_err
 
 call start "" "resultados.html" || echo No se ha podido abrir resultados.html
+
+color 0F
 
 echo Generando RPD de salida...
 call biserverxmlexec -P Admin123 -I %~n2.xml -O .\%~n2.rpd || goto xmlexec_err

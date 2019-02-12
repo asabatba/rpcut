@@ -26,7 +26,7 @@
 
 #define ELEMENT_HASH_MASK (ELEMENT_HASH_SIZE - 1)
 
-#define OUTPUT_TREE_ELEMENT 1 // crea el fichero tree.txt
+#define OUTPUT_TREE_ELEMENT 1 // crea el fichero tree.txt si su valor es distinto de 0
 
 typedef uint16_t hash_t;
 typedef uint32_t oid_t;
@@ -1282,7 +1282,7 @@ int main(int argc, char **argv)
   // printf("afterloop\n");
   // printf("count: %lu elements", count);
 
-  printf("\n-----\n");
+  printf("\n--***--\n");
 
   // decide que elementos se quedan y cuales se quitan
 
