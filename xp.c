@@ -661,7 +661,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
   oid_t id = 0;
   // enum attribute_type attrib_type;
 
-  static char *attrib = 0, *value = 0, *name = 0, *refid = 0, *tagname = 0, *elename = 0;
+  static char *attrib = 0, *value = 0, *name = 0, *tagname = 0, *elename = 0;
 
   if (!attrib)
   {
@@ -670,7 +670,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
     name = malloc(MAX_TAG_SIZE + 1);
     tagname = malloc(MAX_TAG_NAME + 1);
     elename = malloc(ELEMENT_NAME_SIZE + 1);
-    refid = malloc(MAX_TAG_SIZE + 1);
+
   }
 
   *attrib = '\0';
@@ -678,26 +678,28 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
   *name = '\0';
   *tagname = '\0';
   *elename = '\0';
-  *refid = '\0';
+
 
   assert(attrib);
 
   // char *skipped;
-  char *cur = raw + 1; // b4: &ctag->raw[1] ponemos el cursor despues del '<'
+  char *cur = raw + 1; // ponemos el cursor despues del '<'
 
   cur = copy_until_n(tagname, cur, " >", MAX_TAG_NAME);
-  // printf("\ntagname: %s \n", ctag->tagname);
   assert(cur);
+
   cur = skip_all(cur, " \t");
 
   if (*cur == '>')
-  { //no name, no ID
+  { // el elemento no tiene nombre ni ID (solo <element>)
     // special cases let's go
 
     ctag = (ele_merge(0)); // create element with no ID
   }
   else
   {
+    // este loop busca asigna nombre y valor de atributos
+    //   a las variables (attrib, value)
     for (i = 0; *cur != '>'; i++)
     {
 
@@ -723,20 +725,22 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
       cur = skip_all(cur, " \t");
     }
 
-    if (id) // just in case..
-      ctag = ele_merge(id);
+    // if (id) // just in case..
+    ctag = ele_merge(id);
+    // nombre del elemento, <etiqueta name="nombre">
+    strncpy(ctag->elename, elename, ELEMENT_NAME_SIZE);
   }
   assert(ctag);
 
+  // nombre de la etiqueta <etiqueta name="nombre">
   strncpy(ctag->tagname, tagname, MAX_TAG_NAME);
-  strncpy(ctag->elename, elename, ELEMENT_NAME_SIZE);
 
-  char *lt = 0;
-  char *gt = 0;
+  char *lt = 0; // pointer que indica la posicion del <
+  char *gt = 0; // pointer que indica la posicion del >
   Element *ref_to;
   Ref *new_ref;
+  oid_t refid;
 
-  // Ref *new_ref;
 
   // Ref-tags loop!
   for (i = 0; *cur != '\0'; i++)
@@ -748,6 +752,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
       break;
     cur = lt;
 
+    // tag tipo CDATA (no nos interesa)
     if (strncmp(cur, "<![CDATA[", 9) == 0)
     {
       cur = strstr(cur, "]]>");
@@ -755,6 +760,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
       continue;
     }
 
+    // tag tipo comentario (no nos interesa)
     if (strncmp(cur, "<!--", 4) == 0)
     {
       cur = strstr(cur, "-->");
@@ -762,6 +768,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
       continue;
     }
 
+    // tag tipo Ref*** (nos interesa!)
     if (strncmp(cur, "<Ref", 4) == 0)
     {
       gt = strstr(cur, ">");
@@ -771,7 +778,9 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
       assert(cur);
       cur = strchr(cur, '"');
       ++cur;
-      cur = copy_until_n(refid, cur, "\"", MAX_TAG_SIZE);
+      cur = copy_until_n(value, cur, "\"", MAX_TAG_SIZE);
+
+      refid = encode_id(value);
 
       assert(gt > cur);
 
@@ -779,7 +788,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
 
       // caso especial de las refs de privilegepackage (2 en 1)
       //
-      if (strncmp(lt + 1, "RefDatabase", 11) == 0 && strncmp(ctag->tagname, "PrivilegePackage", 16) == 0)
+      if (strncmp(lt + 1, "RefDatabase", 11) == 0 && tagname_is(ctag, "PrivilegePackage") )
       {
         // printf("{%.*s} ", 10,lt);
         cur++;
@@ -788,31 +797,23 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
         gt = cur;
       }
 
-      if (strncmp(ctag->tagname, "PresentationColumn", 18) == 0)
+      if (tagname_is(ctag, "PresentationColumn"))
       {
-        ctag->physical = ele_search(encode_id(refid));
+        ctag->physical = ele_search(refid);
         // assert(ctag->element->physical);
       }
 
-      //  adding references
-
-      ref_to = ele_merge(encode_id(refid)); // look for the refd element
+      // buscar el elemento al que se hace referencia (crear uno nuevo si no lo encuentra)
+      ref_to = ele_merge(refid);
+      // añadir referencia 
       new_ref = ref_add(ctag, ref_to, lt, (size_t)(gt - lt + 1));
       assert(new_ref);
-
-      // new_ref = ref_create(ctag->element);
-      // Element *refid_ele = ref_add(encode_id(refid), new_ref, lt, (size_t)(gt - lt + 1));
 
       if (tagname_is(ctag, "LogicalTableSource"))
       {
         logical_table_source_add(ctag);
       }
 
-      /*
-      if (strncmp(lt + 1, "RefPhysicalTable", 16) == 0)
-      {
-        ctag->ref_physical_table = ref_to;
-      }*/
 
       assert(cur);
       continue;
@@ -921,7 +922,7 @@ void logical_table_source_parse(Element *tsource /*, unsigned long ref_ptable_id
   database->physical = database;
 }
 
-int html_result(t_args *arglist)
+void html_result(t_args *arglist)
 {
 
   // Element *iter;
@@ -1030,7 +1031,7 @@ int html_result(t_args *arglist)
 
   fclose(f);
 
-  return 1;
+  return;
 }
 
 int main(int argc, char **argv)
@@ -1100,6 +1101,7 @@ int main(int argc, char **argv)
     itag = tag_parse(rawtag, arglist.apps);
     // cparse += clock() - cparsea;
 
+    // mostrador de progreso
     if (i % load_limit == 0)
     {
       load_limit = load_limit * 2 - 1;
@@ -1127,6 +1129,7 @@ int main(int argc, char **argv)
 
     assert(itag);
   }
+
   itag->next_tag = 0;
 
   printf(" completado!\n(%I64u elementos)\n", i);
