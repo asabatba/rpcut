@@ -6,6 +6,8 @@
 *.txt
 *.zip
 
+*.bak
+
 
 *.rc
 *.res
