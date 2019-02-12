@@ -1,7 +1,7 @@
 
 both:
-	gcc -o xp xp.c args.c str_misc.c -I.
-	gcc -o xp_inv xp_inv.c
+	gcc -Wall -o xp xp.c args.c str_misc.c -I.
+	gcc -Wall -o xp_inv xp_inv.c
 	
 	
 	del xpc.exe

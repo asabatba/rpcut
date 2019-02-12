@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <time.h>
 #include <assert.h>
 
@@ -24,9 +25,9 @@
 #define LOGICAL_TABLE_SOURCE_SIZE 131072 // size of list of all table sources
 
 #define ELEMENT_HASH_MASK (ELEMENT_HASH_SIZE - 1)
-typedef unsigned hash_t;
 
-typedef unsigned long oid_t;
+typedef uint16_t hash_t;
+typedef uint32_t oid_t;
 
 typedef struct Buffer
 {
@@ -157,7 +158,7 @@ typedef struct Element
   char removal;
   char root;
 
-  int refcount;
+  int16_t refcount;
   struct Ref *ref;    // elements that reference the CURRENT element
   struct Ref *ref_to; // elements that the current element references
 
@@ -187,9 +188,9 @@ Element *first_element[ELEMENT_HASH_SIZE];
 
 // logical table source list and fun
 Element *logical_table_source[LOGICAL_TABLE_SOURCE_SIZE];
-unsigned long int logical_table_source_counter = 0;
+uint32_t logical_table_source_counter = 0;
 
-unsigned long int logical_table_source_add(Element *tsource)
+uint32_t logical_table_source_add(Element *tsource)
 {
 
   assert(tsource);
@@ -205,7 +206,7 @@ unsigned long int logical_table_source_add(Element *tsource)
 
 void ref_erase_all(Element *ele);
 
-int ref_check(Element *tag)
+int16_t ref_check(Element *tag)
 {
   if (!tag)
   {
@@ -223,7 +224,7 @@ int ref_check(Element *tag)
   return 0;
 }
 
-Element *ele_create(unsigned long id /*, Tag *tag*/)
+Element *ele_create(oid_t id /*, Tag *tag*/)
 {
 
   Element *new = malloc(sizeof(Element));
@@ -296,7 +297,7 @@ Element *ele_create(unsigned long id /*, Tag *tag*/)
 }
 
 // searches element with 'id' using hashes
-Element *ele_search(unsigned long id)
+Element *ele_search(oid_t id)
 {
   if (!id)
     return NULL;
@@ -324,7 +325,7 @@ Element *ele_search(unsigned long id)
 // looks for element that matches id
 // ->if match, returns element
 // ->if no match, creates and returns element
-Element *ele_merge(unsigned long id /*, Tag *tag*/)
+Element *ele_merge(oid_t id /*, Tag *tag*/)
 {
 
   clock_t start = clock();
@@ -344,7 +345,7 @@ Element *ele_merge(unsigned long id /*, Tag *tag*/)
 }
 
 // añade un hijo 'child_ele' al padre 'parent_id'
-Element *ele_add_child(unsigned long parent_id, Element *child_ele)
+Element *ele_add_child(oid_t parent_id, Element *child_ele)
 {
 
   Element *parent_ele = ele_merge(parent_id);
@@ -516,7 +517,7 @@ int tag_is_root(Element *ctag)
 
 // tries to guess what gar app the string [source] is
 //   and writes it to [dest]
-void extract_app(char *dest, char *source)
+void extract_app(char *dest, const char *source)
 {
   static char *transform = 0;
   // size_t i;
@@ -611,8 +612,8 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
 
   Element *ctag = 0;
 
-  unsigned long pId = 0; // parent ID
-  unsigned long id = 0;
+  oid_t pId = 0; // parent ID
+  oid_t id = 0;
   // Ref *new_ref = 0;
 
   static char *attrib = 0, *value = 0, *tagname = 0, *name = 0, *qname = 0, *pname = 0, *refid = 0;
@@ -1094,13 +1095,13 @@ int main(int argc, char **argv)
   // FILE *tree_xml = fopen("tree.xml", "wb"); // DEBUG ARBOL
   // assert(tree_xml); // DEBUG ARBOL
 
-  int depth;
+  int16_t depth;
 
   Element *iter;
   Element *jter;
   Ref *kter;
 
-  unsigned long int count = 0;
+  uint32_t count = 0;
   for (iter = first_tag /*first_element[0]*/; iter; iter = iter->next_tag)
   {
     // printf("%lu\n", iter->id);
