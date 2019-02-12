@@ -38,18 +38,18 @@ void upper(char *input)
   }
 }
 
-size_t char_count(char *string)
-{
+// size_t char_count(char *string)
+// {
 
-  if (!string)
-    return 0;
+//   if (!string)
+//     return 0;
 
-  size_t i;
+//   size_t i;
 
-  for (i = 0; string[i]; i++)
-    ;
-  return i;
-}
+//   for (i = 0; string[i]; i++)
+//     ;
+//   return i;
+// }
 
 size_t str_replace(char *string, char a, char b)
 {
@@ -94,61 +94,20 @@ unsigned long power2(unsigned long exp)
   return output;
 }
 
-// returns a double-encoded id (from a string like 1234:43242)
-unsigned long encode_id(char *strid)
-{
-  unsigned long id, /*first,*/ second;
-
-  char *copy = malloc(strlen(strid) + 1);
-  //printf("tok:\t%s\n", tok);
-  strcpy(copy, strid);
-  // printf("tok:->%s\n", copy);
-  //str_replace(strid, ':', ' ');
-  // sscanf(str_id, "%lf", &id);
-
-  //int ok = sscanf(strid, "%u:%u", &first, &second);
-  char *tok = strtok(copy, ":");
-  // first = strtoul(tok, 0, 10);
-  tok = strtok(NULL, ":");
-  second = strtoul(tok, 0, 10);
-
-  // printf("%u vs %u\n", second,power2(18));
-
-  /*
-  assert(first < power2(14));
-  assert(second < power2(18));
-  id = (first << 16) | second;*/
-
-  //   assert(second < power2(30));
-
-  if (second >= power2(30))
-  {
-    printf("Error: Se ha pasado el limite de bits para la ID de los elementos\n");
-    printf("Es posible que sea necesario modificar el tipo de 'typedef unsigned long oid_t;'\n");
-  }
-
-  id = second; // fuck it, ignore first part of id
-
-  // printf("%s -> %u and %u: %u\n", strid, first, second, id);
-
-  free(copy);
-  return id;
-}
-
-// returns a character if said character c is equal to any of the characters in string 'alts' (NULL if not)
-char is_any_of(char c, char *alts)
+// returns a character if said character c is equal to any of the characters in string 'tokens' (NULL if not)
+char is_any_of(char c, const char *tokens)
 {
   size_t i;
-  assert(c);
-  assert(alts[0]);
+
+  assert(tokens);
+  assert(tokens[0]);
   if (!c)
     return 0;
 
-  for (i = 0; alts[i]; i++)
+  for (i = 0; tokens[i]; i++)
   {
-    //printf("\t-(%i)-: %c vs %c\n", c == alts[i], c, alts[i]);
 
-    if (c == alts[i])
+    if (c == tokens[i])
     {
       //printf("{%c}", c);
       return c;
@@ -162,7 +121,7 @@ char is_any_of(char c, char *alts)
 // copia todos los caracteres desde source hasta dest,
 //  hasta chocar contra algun token (o NULL char)
 //   (o hasta escribir n caracteres en dest)
-char *copy_until_n(char *dest, char *source, char *tokens, size_t n)
+char *copy_until_n(char *dest, char *source, const char *tokens, size_t n)
 {
 
   size_t i;
@@ -194,13 +153,13 @@ char *copy_until_n(char *dest, char *source, char *tokens, size_t n)
 }
 
 // just a wrapper
-char *skip_until(char *source, char *tokens)
+char *skip_until(char *source, const char *tokens)
 {
   return copy_until(0, source, tokens);
 }
 
 // skip source as long as it's just tokens
-char *skip_all(char *source, char *tokens)
+char *skip_all(char *source, const char *tokens)
 {
   //printf("\n\n- skipall -\n\n");
   assert(*tokens);
@@ -215,14 +174,16 @@ char *skip_all(char *source, char *tokens)
 
 // ignore eveything between [start] and [end] strings
 
-char *ignore_between(char *string, char *start, char *end)
+char *ignore_between(char *string, const char *start, const char *end)
 {
   int startlen = strlen(start);
 
   if (strncmp(string, start, startlen) == 0)
   {
     string = strstr(string, end);
-    assert(string);
+    if (!string)
+      return 0;
+
     string = string + strlen(end);
     return string;
   }
@@ -265,7 +226,7 @@ char *strip_whitespace(char *string)
 
 // permanently modifies the string [source] so that everything
 //   between [start] and [end] is ignored
-char *skip_between(char *source, char *start, char *end)
+char *skip_between(char *source, const char *start, const char *end)
 {
 
   size_t i, j = 0;

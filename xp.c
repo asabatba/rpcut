@@ -101,6 +101,30 @@ char nextc(Buffer *b)
   return c;
 }
 
+// returns a double-encoded id (from a string like 1234:43242)
+oid_t encode_id(char *strid)
+{
+  oid_t id, /*first,*/ second;
+
+  char *copy = malloc(strlen(strid) + 1);
+  strcpy(copy, strid);
+
+  char *tok = strtok(copy, ":");
+  tok = strtok(NULL, ":");
+  second = strtoul(tok, 0, 10);
+
+  if (second >= 2147483648 /* 2^31 */)
+  {
+    printf("Error: Se ha pasado el limite de bits para la ID de los elementos\n");
+    printf("Es posible que sea necesario modificar el tipo de 'typedef *** oid_t;'\n");
+  }
+
+  id = second;
+
+  free(copy);
+  return id;
+}
+
 struct PerfList
 {
 
@@ -550,6 +574,27 @@ void extract_app(char *dest, const char *source)
   }
 }
 
+enum attribute_type
+{
+  ID,
+  PARENT_ID,
+  NAME,
+  OTHER
+};
+
+enum attribute_type get_attr_type(const char *s)
+{
+
+  if (strcmp(s, "name") == 0)
+    return NAME;
+  else if (strcmp(s, "id") == 0)
+    return ID;
+  else if (strcmp(s, "parentId") == 0)
+    return PARENT_ID;
+  else
+    return OTHER;
+}
+
 // stores the next full level 1 tag in sbuf
 char *get_next_tag(Buffer *source)
 {
@@ -614,9 +659,9 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
 
   oid_t pId = 0; // parent ID
   oid_t id = 0;
-  // Ref *new_ref = 0;
+  // enum attribute_type attrib_type;
 
-  static char *attrib = 0, *value = 0, *tagname = 0, *name = 0, *qname = 0, *pname = 0, *refid = 0;
+  static char *attrib = 0, *value = 0, *name = 0, *refid = 0, *tagname = 0, *elename = 0;
 
   if (!attrib)
   {
@@ -624,8 +669,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
     value = malloc(MAX_TAG_SIZE + 1);
     name = malloc(MAX_TAG_SIZE + 1);
     tagname = malloc(MAX_TAG_NAME + 1);
-    qname = malloc(MAX_TAG_SIZE + 1);
-    pname = malloc(MAX_TAG_SIZE + 1);
+    elename = malloc(ELEMENT_NAME_SIZE + 1);
     refid = malloc(MAX_TAG_SIZE + 1);
   }
 
@@ -633,8 +677,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
   *value = '\0';
   *name = '\0';
   *tagname = '\0';
-  *qname = '\0';
-  *pname = '\0';
+  *elename = '\0';
   *refid = '\0';
 
   assert(attrib);
@@ -659,6 +702,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
     {
 
       cur = copy_until_n(attrib, cur, "=", MAX_TAG_SIZE);
+      // attrib_type = get_attr_type(attrib);
 
       assert(cur);
 
@@ -670,7 +714,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
       assert(cur);
 
       if (strcmp(attrib, "name") == 0)
-        strcpy(name, value);
+        strncpy(elename, value, ELEMENT_NAME_SIZE);
       else if (strcmp(attrib, "id") == 0)
         id = encode_id(value);
       else if (strcmp(attrib, "parentId") == 0)
@@ -685,7 +729,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
   assert(ctag);
 
   strncpy(ctag->tagname, tagname, MAX_TAG_NAME);
-  strncpy(ctag->elename, name, ELEMENT_NAME_SIZE);
+  strncpy(ctag->elename, elename, ELEMENT_NAME_SIZE);
 
   char *lt = 0;
   char *gt = 0;
@@ -789,10 +833,10 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
     root_elements[i] = ctag;
   }
 
-  if (ctag->root == 1 && name && *name)
+  if (ctag->root == 1 && ctag->elename && *ctag->elename)
   {
     // printf("><\t name is : %s\n", name);
-    extract_app(ctag->appname, name);
+    extract_app(ctag->appname, ctag->elename);
 
     if (!tagname_is(ctag, "BusinessModel") && !tagname_is(ctag, "PresentationCatalog") && str_in_list(ctag->appname, applist))
     {
@@ -985,6 +1029,8 @@ int html_result(t_args *arglist)
   fprintf(f, html_footer);
 
   fclose(f);
+
+  return 1;
 }
 
 int main(int argc, char **argv)
