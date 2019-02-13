@@ -513,7 +513,7 @@ int tag_is_root(Element *ctag)
 void extract_app(char *dest, const char *source)
 {
   static char *transform = 0;
-  // size_t i;
+
   int swap = 0;
 
   if (!transform)
@@ -525,7 +525,8 @@ void extract_app(char *dest, const char *source)
 
   // printf("<-\t\tbefore: %s\n", transform);
   skip_between(transform, "&", ";");
-  // printf("<-\t\tafter_skip: %s\n", transform);
+
+  // si el nombre empieza por "R_" (roles)
   if (transform[0] == 'R' && transform[1] == '_')
   {
     transform += 2;
@@ -534,13 +535,12 @@ void extract_app(char *dest, const char *source)
 
   str_to_alpha(transform);
   upper(transform);
-  left(transform, 6);
-  // printf("<-\t\tafter_left: %s\n", transform);
-  strcpy(dest, transform);
+
+  strncpy(dest, transform, 6);
   if (swap)
-  {
     transform -= 2;
-  }
+
+  return;
 }
 
 enum attribute_type

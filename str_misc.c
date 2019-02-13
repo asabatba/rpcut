@@ -224,8 +224,8 @@ char *strip_whitespace(char *string)
   return new_string;
 }
 
-// permanently modifies the string [source] so that everything
-//   between [start] and [end] is ignored
+// permanently modifies the string [source] so every instance
+//   of chars between [start] and [end] is ignored
 char *skip_between(char *source, const char *start, const char *end)
 {
 
