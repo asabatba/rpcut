@@ -26,30 +26,32 @@
 
 #define ELEMENT_HASH_MASK (ELEMENT_HASH_SIZE - 1)
 
-#define XP_DEBUG 1 // crea el fichero tree.txt, cronometra las funciones, etc, si su valor es distinto de 0
+#define XP_DEBUG 0 // crea el fichero tree.txt, cronometra las funciones, etc, si su valor es distinto de 0
 
 typedef uint16_t hash_t;
 typedef uint32_t oid_t;
 
-typedef struct Buffer
+struct Buffer
 {
   char *buffer;
-  FILE *stream;
   char *cursor;
-  size_t index;
   size_t size;
-  //size_t chars_read;
-} Buffer;
+};
 
-//no need to destroy really
-Buffer *file_to_buffer(char *filename)
+// carga el fichero <filename> en el struct Buffer
+struct Buffer *file_to_buffer(const char *filename)
 {
-  Buffer *b = malloc(sizeof(Buffer));
+  struct Buffer *b = malloc(sizeof(struct Buffer));
 
   FILE *f = fopen(filename, "rb");
+  if (!f)
+    return 0;
 
+  // tamaño del fichero (num de bytes)
   fseek(f, 0, SEEK_END);
   b->size = ftell(f);
+
+  // volvemos al principio
   fseek(f, 0, SEEK_SET);
 
   b->buffer = malloc(b->size + 1);
@@ -59,48 +61,13 @@ Buffer *file_to_buffer(char *filename)
     // ha fallado la asignacion de memoria para el fichero
     printf("malloc ha fallado para %s\n", filename);
   }
-  fread(b->buffer, b->size, 1, f);
+  size_t i = fread(b->buffer, b->size, 1, f);
   fclose(f);
 
-  b->index = 0;
-  return b;
-}
-
-Buffer *empty_buffer(size_t size)
-{
-
-  Buffer *b = malloc(sizeof(Buffer));
-  b->size = size;
-  b->buffer = malloc(size + 1);
-  b->buffer[size] = '\0';
-  b->cursor = 0;
+  if (!i)
+    return 0;
 
   return b;
-}
-
-Buffer *create_write_buffer(char *filename)
-{
-  Buffer *b = malloc(sizeof(Buffer));
-  b->stream = fopen(filename, "w");
-  b->buffer = malloc(WRITE_BUF_SIZE + 1);
-  if (!b->buffer)
-  {
-    // ha fallado la asignacion de memoria para el fichero
-    printf("malloc ha fallado para %s\n", filename);
-  }
-  return b;
-}
-
-char nextc(Buffer *b)
-{
-
-  char c;
-
-  c = b->buffer[b->index];
-  b->index++;
-  ++b->cursor;
-
-  return c;
 }
 
 // returns a double-encoded id (from a string like 1234:43242)
@@ -598,7 +565,7 @@ enum attribute_type get_attr_type(const char *s)
 }
 
 // stores the next full level 1 tag in sbuf
-char *get_next_tag(Buffer *source)
+char *get_next_tag(struct Buffer *source)
 {
   // size_t i, j;
   static char *closing_tag = 0;
@@ -750,7 +717,7 @@ void ele_decider()
 }
 
 // guarda los elementos que no tienen el marcador "removal" en el xml de salida
-void save_xml(FILE *oxml, Element *first_tag, Buffer *input_buffer)
+void save_xml(FILE *oxml, Element *first_tag, struct Buffer *input_buffer)
 {
   // el output!
   Element *tag_iter;
@@ -1184,7 +1151,7 @@ int main(int argc, char **argv)
 
   clock_t begin = clock();
 
-  Buffer *input_buffer = file_to_buffer(arglist.input);
+  struct Buffer *input_buffer = file_to_buffer(arglist.input);
 
   if (input_buffer == 0)
   {
