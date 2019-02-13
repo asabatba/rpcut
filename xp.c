@@ -28,6 +28,8 @@
 
 #define XP_DEBUG 0 // crea el fichero tree.txt, cronometra las funciones, etc, si su valor es distinto de 0
 
+#define INVERSE_MODE 0 // modo "dejar solo aplicaciones indicadas"
+
 typedef uint16_t hash_t;
 typedef uint32_t oid_t;
 
@@ -943,7 +945,12 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
     // printf("><\t name is : %s\n", name);
     extract_app(ctag->appname, ctag->elename);
 
-    if (!tagname_is(ctag, "BusinessModel") && !tagname_is(ctag, "PresentationCatalog") && str_in_list(ctag->appname, applist))
+    if (INVERSE_MODE && !str_in_list(ctag->appname, applist))
+    {
+      ctag->removal = 1;
+    }
+
+    if (!INVERSE_MODE && !tagname_is(ctag, "BusinessModel") && !tagname_is(ctag, "PresentationCatalog") && str_in_list(ctag->appname, applist))
     {
       ctag->removal = 1;
     }
