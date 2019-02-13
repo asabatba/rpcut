@@ -1,6 +1,8 @@
 
 both:
-	gcc -Wall -o xp xp.c args.c str_misc.c -I.
+	gcc -Wall -Os -o xp xp.c args.c str_misc.c -I.
+# gcc -Wall -O0 -g -gdwarf-2 -o xp xp.c args.c str_misc.c -I.
+
 	gcc -Wall -o xp_inv xp_inv.c
 	
 	

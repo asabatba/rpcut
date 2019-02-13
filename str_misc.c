@@ -99,8 +99,8 @@ char is_any_of(char c, const char *tokens)
 {
   size_t i;
 
-  assert(tokens);
-  assert(tokens[0]);
+  // assert(tokens);
+  // assert(tokens[0]);
   if (!c)
     return 0;
 

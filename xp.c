@@ -26,7 +26,7 @@
 
 #define ELEMENT_HASH_MASK (ELEMENT_HASH_SIZE - 1)
 
-#define OUTPUT_TREE_ELEMENT 1 // crea el fichero tree.txt si su valor es distinto de 0
+#define XP_DEBUG 1 // crea el fichero tree.txt, cronometra las funciones, etc, si su valor es distinto de 0
 
 typedef uint16_t hash_t;
 typedef uint32_t oid_t;
@@ -377,7 +377,7 @@ Element *ele_add_child(oid_t parent_id, Element *child_ele)
   Element *parent_ele = ele_merge(parent_id);
   if (!parent_ele)
   {
-    printf("Error; no se ha podido encontrar ni crear el elemento %lu\n", parent_id); //no debería pasar esto
+    printf("Error; no se ha podido encontrar ni crear el elemento %u\n", parent_id); //no debería pasar esto
     return 0;
   }
 
@@ -661,7 +661,7 @@ void ele_decider()
 
   FILE *tree_xml;
 
-  if (OUTPUT_TREE_ELEMENT)
+  if (XP_DEBUG)
   {
     printf("Se genera el fichero tree.txt...\n"); // DEBUG ARBOL
     tree_xml = fopen("tree.txt", "wb");           // DEBUG ARBOL
@@ -709,7 +709,7 @@ void ele_decider()
       {
         // printf("%s has sibling %x and parent %x\n", jtag->tagname, jtag->sibling, jtag->parent);
 
-        if (OUTPUT_TREE_ELEMENT)
+        if (XP_DEBUG)
           fprintf(tree_xml, "%.*s%s (id=%lu)\n", depth, "\t\t\t\t\t", jter->tagname, jter->id); // DEBUG ARBOL
         jter->removal = 1;
 
@@ -729,7 +729,7 @@ void ele_decider()
           while (!jter->sibling && jter->parent)
           {
             jter = jter->parent;
-            if (OUTPUT_TREE_ELEMENT)
+            if (XP_DEBUG)
               fprintf(tree_xml, "\n"); // DEBUG ARBOL
             depth--;
           }
@@ -740,10 +740,10 @@ void ele_decider()
       }
     }
   }
-  if (OUTPUT_TREE_ELEMENT)
+  if (XP_DEBUG)
   {
     fclose(tree_xml); // DEBUG ARBOL
-    printf("Finalizado fichero tree.txt");
+    printf("Finalizado fichero tree.txt\n");
   }
 
   return;
@@ -1212,8 +1212,8 @@ int main(int argc, char **argv)
 
   input_buffer->buffer = strstr(input_buffer->buffer, "<");
 
-  Element *first_tag;
-  Element *itag;
+  Element *first_tag = 0;
+  Element *itag = 0;
 
   printf("Empieza el parseo del XML -> ");
   // clock_t aa, zz, cparse = 0, cparsea;
@@ -1295,12 +1295,16 @@ int main(int argc, char **argv)
 
   // clock_t end = clock();
 
-  // printf("Total:\t%u clocks\n", end - begin);
-  // printf("Next tag:\t%u clocks\t%u calls\n", f_perf.get_next_clocks, f_perf.get_next_calls);
-  // printf("Parsing:\t%u clocks\t%u calls\n", f_perf.parse_clocks, f_perf.parse_calls);
-  // printf("Search:\t%u clocks\t%u calls\n", f_perf.search_clocks, f_perf.search_calls);
-
   clock_t end = clock();
+
+  if (XP_DEBUG)
+  {
+    printf("\n--***--\nRecuento de tiempos\n\n");
+    printf("Total:\t%lu clocks\n", (long unsigned)end - begin);
+    printf("Next tag:\t%lu clocks\t%lu calls\n", (long unsigned)f_perf.get_next_clocks, (long unsigned)f_perf.get_next_calls);
+    printf("Parsing:\t%lu clocks\t%lu calls\n", (long unsigned)f_perf.parse_clocks, (long unsigned)f_perf.parse_calls);
+    printf("Ele_merge:\t%lu clocks\t%lu calls\n", (long unsigned)f_perf.elemerge_clocks, (long unsigned)f_perf.elemerge_calls);
+  }
 
   html_result(&arglist);
 
