@@ -22,6 +22,8 @@ char is_any_of(char c, const char *tokens);
 
 char *copy_until_n(char *dest, char *source, const char *tokens, size_t n);
 
+char *copy_until_chr_n(char *dest, char *source, const char token, size_t n);
+
 char *skip_until(char *source, const char *tokens);
 
 char *skip_all(char *source, const char *tokens);

@@ -556,13 +556,10 @@ enum attribute_type get_attr_type(const char *s)
 // stores the next full level 1 tag in sbuf
 char *get_next_tag(struct Buffer *source)
 {
-  // size_t i, j;
-  static char *closing_tag = 0;
+
+  char closing_tag[MAX_TAG_NAME] = {0};
 
   clock_t begin = clock();
-
-  if (!closing_tag)
-    closing_tag = malloc(MAX_TAG_NAME);
 
   // closing_tag = "</"; // i think this is pretty bad. yikes
   strcpy(closing_tag, "</");
@@ -843,22 +840,15 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
   oid_t id = 0;
   // enum attribute_type attrib_type;
 
-  static char *attrib = 0, *value = 0, *name = 0, *tagname = 0, *elename = 0;
+  static char *attrib = 0, *value = 0, *tagname = 0, *elename = 0;
 
   if (!attrib)
   {
     attrib = malloc(MAX_TAG_SIZE + 1);
     value = malloc(MAX_TAG_SIZE + 1);
-    name = malloc(MAX_TAG_SIZE + 1);
     tagname = malloc(MAX_TAG_NAME + 1);
     elename = malloc(ELEMENT_NAME_SIZE + 1);
   }
-
-  *attrib = '\0';
-  *value = '\0';
-  *name = '\0';
-  *tagname = '\0';
-  *elename = '\0';
 
   assert(attrib);
 
