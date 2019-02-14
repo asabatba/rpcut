@@ -5,8 +5,9 @@
 
 #include "str_misc.h"
 
-// leaves only alphabet (a-z and A-Z)
-void str_to_alpha(char *input)
+// leaves only ANSI alphabet characters (a-z and A-Z)
+//   and returns new length
+size_t str_to_alpha(char *input)
 {
   size_t i, j; //input is malloc'd
   j = 0;
@@ -19,14 +20,33 @@ void str_to_alpha(char *input)
     }
   }
   input[j] = '\0';
+  return j;
 }
 
-void left(char *input, int newlength)
+size_t left(char *input, int newlength)
 {
   size_t i;
   for (i = 0; input[i] && i < newlength; i++)
     ;
   input[i] = '\0';
+  return i;
+}
+
+// copia el string src a dest, terminando con caracter nulo
+// !!! asegurarse que dest tiene capacidad >= len+1
+char *strscpy(char *dest, const char *src, size_t len)
+{
+
+  size_t srclen = strlen(src);
+
+  if (srclen < len)
+    len = srclen;
+
+  memcpy(dest, src, len);
+
+  dest[len] = '\0';
+
+  return dest;
 }
 
 void upper(char *input)
@@ -63,7 +83,7 @@ size_t str_replace(char *string, char a, char b)
 }
 
 // returns 1 if app is in the list
-int str_in_list(char *app, char **list)
+int str_in_list(char app[static 1], char **list)
 {
   size_t i;
 
@@ -95,25 +115,17 @@ unsigned long power2(unsigned long exp)
 }
 
 // returns a character if said character c is equal to any of the characters in string 'tokens' (NULL if not)
-char is_any_of(char c, const char *tokens)
+char is_any_of(char c, const char tokens[static 1])
 {
   size_t i;
-
-  // assert(tokens);
-  // assert(tokens[0]);
-  if (!c)
-    return 0;
 
   for (i = 0; tokens[i]; i++)
   {
 
     if (c == tokens[i])
     {
-      //printf("{%c}", c);
       return c;
     }
-    //printf("(%c)", c);
-    //printf("%c", '\t');
   }
   return 0;
 }
@@ -121,49 +133,41 @@ char is_any_of(char c, const char *tokens)
 // copia todos los caracteres desde source hasta dest,
 //  hasta chocar contra algun token (o NULL char)
 //   (o hasta escribir n caracteres en dest)
-char *copy_until_n(char *dest, char *source, const char *tokens, size_t n)
+char *copy_until_n(char *dest, char source[static 1], const char tokens[static 1], size_t n)
 {
 
   size_t i;
-  assert(*tokens && "this function was called with NULL arg tokens");
-  assert(*source && "this function was called with NULL arg source");
-  //printf("\n\n- copy -\n\n");
-  if (dest)
+
+  for (i = 0; *source && !is_any_of(*source, tokens); i++)
   {
-    for (i = 0; *source && !is_any_of(*source, tokens); i++)
-    {
-      if (n && i == n)
-        break;
-      dest[i] = *source;
-      ++source;
-    }
-    dest[i] = '\0';
+    if (n && i == n)
+      break;
+    dest[i] = *source;
+    ++source;
   }
-  else
-  { // just advance the source if there's no dest
-    for (i = 0; *source && !is_any_of(*source, tokens); i++)
-    {
-      if (n && i == n)
-        break;
-      ++source;
-    }
-  }
+  dest[i] = '\0';
 
   return source;
 }
 
 // just a wrapper
-char *skip_until(char *source, const char *tokens)
+char *skip_until(char source[static 1], const char tokens[static 1])
 {
-  return copy_until(0, source, tokens);
+  // return copy_until(0, source, tokens);
+  size_t i;
+
+  for (i = 0; *source && !is_any_of(*source, tokens); i++)
+  {
+    ++source;
+  }
+
+  return source;
 }
 
 // skip source as long as it's just tokens
-char *skip_all(char *source, const char *tokens)
+char *skip_all(char source[static 1], const char tokens[static 1])
 {
-  //printf("\n\n- skipall -\n\n");
-  assert(*tokens);
-  assert(*source);
+
   size_t i;
 
   for (i = 0; *source && is_any_of(*source, tokens); i++)
@@ -174,7 +178,7 @@ char *skip_all(char *source, const char *tokens)
 
 // ignore eveything between [start] and [end] strings
 
-char *ignore_between(char *string, const char *start, const char *end)
+char *ignore_between(char string[static 1], const char start[static 1], const char end[static 1])
 {
   int startlen = strlen(start);
 
@@ -192,16 +196,12 @@ char *ignore_between(char *string, const char *start, const char *end)
 }
 
 // usage:  string = strip_whitespace(string);
-char *strip_whitespace(char *string)
+char *strip_whitespace(char string[static 1])
 {
   size_t i, j, k;
   size_t length = strlen(string);
 
-  assert(string);
-
   char *new_string = malloc((length + 1));
-
-  assert(new_string);
 
   // strip right
   for (k = length - 1; k >= 0 && string[k] && is_any_of(string[k], "\t\r\n "); k--)
@@ -220,20 +220,18 @@ char *strip_whitespace(char *string)
   }
   // printf("\"%s\"\r\n->\r\n\"%s\"", string, new_string);
   free(string);
-  assert(new_string);
+
   return new_string;
 }
 
 // permanently modifies the string [source] so every instance
 //   of chars between [start] and [end] is ignored
-char *skip_between(char *source, const char *start, const char *end)
+char *skip_between(char source[static 1], const char start[static 1], const char end[static 1])
 {
 
   size_t i, j = 0;
   int startlen = strlen(start);
   int endlen = strlen(end);
-  assert(startlen);
-  assert(endlen);
 
   for (i = 0; source[i]; i++)
   {

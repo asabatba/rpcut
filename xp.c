@@ -8,10 +8,6 @@
 #include "args.h"
 #include "str_misc.h"
 
-// #include <unistd.h>
-
-// #include "args.h"
-
 // #define MAX_STR_SIZE 128
 #define MAX_ID_SIZE 16
 #define MAX_TAG_NAME 32 // names like PhysicalColumn, etc
@@ -72,13 +68,14 @@ struct Buffer *file_to_buffer(const char *filename)
   return b;
 }
 
-// returns a double-encoded id (from a string like 1234:43242)
+// devuelve la id con formato oid_t (desde un string tipo "1234:43242")
 oid_t encode_id(char *strid)
 {
   oid_t id, /*first,*/ second;
 
-  char *copy = malloc(strlen(strid) + 1);
-  strcpy(copy, strid);
+  char copy[MAX_ID_SIZE + 1] = {0};
+
+  strscpy(copy, strid, MAX_ID_SIZE);
 
   char *tok = strtok(copy, ":");
   tok = strtok(NULL, ":");
@@ -92,7 +89,6 @@ oid_t encode_id(char *strid)
 
   id = second;
 
-  free(copy);
   return id;
 }
 
@@ -514,16 +510,10 @@ int tag_is_root(Element *ctag)
 //   and writes it to [dest]
 void extract_app(char *dest, const char *source)
 {
-  static char *transform = 0;
+  char string[MAX_TAG_NAME + 1] = {0};
+  char *transform = &string[0];
 
-  int swap = 0;
-
-  if (!transform)
-  {
-    transform = malloc(MAX_TAG_SIZE * sizeof(char));
-  }
-
-  strncpy(transform, source, MAX_TAG_SIZE - 1);
+  strscpy(transform, source, MAX_TAG_NAME);
 
   // printf("<-\t\tbefore: %s\n", transform);
   skip_between(transform, "&", ";");
@@ -532,15 +522,12 @@ void extract_app(char *dest, const char *source)
   if (transform[0] == 'R' && transform[1] == '_')
   {
     transform += 2;
-    swap = 1;
   }
 
   str_to_alpha(transform);
   upper(transform);
 
-  strncpy(dest, transform, 6);
-  if (swap)
-    transform -= 2;
+  strscpy(dest, transform, 6);
 
   return;
 }
@@ -753,7 +740,7 @@ char *parse_refs(char *cur, Element *ctag)
   char *lt = 0; // pointer que indica la posicion del <
   char *gt = 0; // pointer que indica la posicion del >
 
-  char strefid[MAX_TAG_NAME] = {0};
+  char strefid[MAX_ID_SIZE + 1] = {0};
 
   Element *ref_to;
   Ref *new_ref;
@@ -909,7 +896,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
       assert(cur);
 
       if (strcmp(attrib, "name") == 0)
-        strncpy(elename, value, ELEMENT_NAME_SIZE);
+        strscpy(elename, value, ELEMENT_NAME_SIZE);
       else if (strcmp(attrib, "id") == 0)
         id = encode_id(value);
       else if (strcmp(attrib, "parentId") == 0)
@@ -921,12 +908,12 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
     // if (id) // just in case..
     ctag = ele_merge(id);
     // nombre del elemento, <etiqueta name="nombre">
-    strncpy(ctag->elename, elename, ELEMENT_NAME_SIZE);
+    strscpy(ctag->elename, elename, ELEMENT_NAME_SIZE);
   }
   assert(ctag);
 
   // nombre de la etiqueta <etiqueta name="nombre">
-  strncpy(ctag->tagname, tagname, MAX_TAG_NAME);
+  strscpy(ctag->tagname, tagname, MAX_TAG_NAME);
 
   // funcion que maneja el tema de referencias (tags que empiezan por "Ref")
   cur = parse_refs(cur, ctag);
