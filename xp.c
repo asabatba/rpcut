@@ -784,7 +784,7 @@ char *parse_refs(char *cur, Element *ctag)
       assert(cur);
       cur = strchr(cur, '"');
       ++cur;
-      cur = copy_until_n(strefid, cur, "\"", MAX_TAG_SIZE);
+      cur = copy_until_n(strefid, cur, "\"", MAX_ID_SIZE);
 
       refid = encode_id(strefid);
 

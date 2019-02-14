@@ -115,6 +115,8 @@ unsigned long power2(unsigned long exp)
 }
 
 // returns a character if said character c is equal to any of the characters in string 'tokens' (NULL if not)
+
+
 char is_any_of(char c, const char tokens[static 1])
 {
   size_t i;
@@ -130,10 +132,43 @@ char is_any_of(char c, const char tokens[static 1])
   return 0;
 }
 
+// version un poco mas lenta!
+char is_any_of2(char c, const char tokens[static 1])
+{
+
+    if (strchr(tokens, c))
+    {
+        return c;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+
 // copia todos los caracteres desde source hasta dest,
 //  hasta chocar contra algun token (o NULL char)
 //   (o hasta escribir n caracteres en dest)
 char *copy_until_n(char *dest, char source[static 1], const char tokens[static 1], size_t n)
+{
+
+  size_t i;
+
+  for (i = 0; source[i] && !is_any_of(source[i], tokens); i++)
+  {
+    if (n && i == n)
+      break;
+  }
+
+  memcpy(dest, source, i);
+  dest[i] = '\0';
+
+  return source+i;
+}
+
+// version anterior, un poco mas lenta en general
+char *copy_until_n2(char *dest, char source[static 1], const char tokens[static 1], size_t n)
 {
 
   size_t i;
