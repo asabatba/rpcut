@@ -7,6 +7,7 @@
 
 #include "args.h"
 #include "str_misc.h"
+#include "speedtest.h"
 
 // #define MAX_STR_SIZE 128
 #define MAX_ID_SIZE 16
@@ -91,28 +92,6 @@ oid_t encode_id(char *strid)
 
   return id;
 }
-
-struct PerfList
-{
-
-  clock_t get_next_clocks;
-  size_t get_next_calls;
-
-  clock_t parse_clocks;
-  size_t parse_calls;
-
-  clock_t search_clocks;
-  size_t search_calls;
-
-  clock_t elemerge_clocks;
-  size_t elemerge_calls;
-
-  clock_t addref_clocks;
-  size_t addref_calls;
-};
-
-static struct PerfList f_perf;
-// f_perf = malloc(sizeof(struct PerfList));
 
 struct Tag;
 
@@ -274,16 +253,6 @@ Element *ele_create(oid_t id /*, Tag *tag*/)
     first_element[hash]->hash_last = new;
   }
 
-  // hm
-  // if (!first_element[0])
-  // {
-  //   ele_create(0);
-  // }
-
-  /*
-  first_element[0]->last->next = new;
-  first_element[0]->last = new;
-*/
   return new;
 }
 
@@ -319,7 +288,7 @@ Element *ele_search(oid_t id)
 Element *ele_merge(oid_t id /*, Tag *tag*/)
 {
 
-  clock_t start = clock();
+  clock_t begin = clock();
 
   Element *ele;
   ele = ele_search(id);
@@ -329,8 +298,7 @@ Element *ele_merge(oid_t id /*, Tag *tag*/)
     ele = ele_create(id);
   }
 
-  f_perf.elemerge_calls++;
-  f_perf.elemerge_clocks += clock() - start;
+  funspeed_update(ELE_MERGE, begin, XP_DEBUG);
 
   return ele;
 }
@@ -385,7 +353,7 @@ Ref *ref_create(Element *from, Element *to)
 // adds the reference chid_ref to the parent, returns the parent element
 Ref *ref_add(Element *from, Element *to, char *string_start, size_t string_length)
 {
-  clock_t start = clock();
+  clock_t begin = clock();
   // Element *parent_ele = ele_merge(parent_id);
   assert(from);
   assert(to);
@@ -432,8 +400,7 @@ Ref *ref_add(Element *from, Element *to, char *string_start, size_t string_lengt
     from->refcount = 0;
   from->refcount++;
 
-  f_perf.addref_clocks += clock() - start;
-  f_perf.addref_calls++;
+  funspeed_update(REF_ADD, begin, XP_DEBUG);
 
   return ref;
 }
@@ -595,9 +562,7 @@ char *get_next_tag(struct Buffer *source)
   cur = skip_all(cur, "\r\n ");
   source->buffer = cur;
 
-  clock_t end = clock();
-  f_perf.get_next_calls++;
-  f_perf.get_next_clocks += (end - begin);
+  funspeed_update(GET_NEXT_TAG, begin, XP_DEBUG);
 
   return start;
 }
@@ -941,9 +906,8 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
   ctag->raw = raw;
   ctag->rawsize = (size_t)(cur - ctag->raw + 1);
 
-  clock_t end = clock();
-  f_perf.parse_calls++;
-  f_perf.parse_clocks += (end - begin);
+  funspeed_update(TAG_PARSE, begin, XP_DEBUG);
+
   return ctag;
 }
 
@@ -1190,15 +1154,8 @@ int main(int argc, char **argv)
     if (i % load_limit == 0)
     {
       load_limit = load_limit * 2 - 1;
-      // printf("\n%lu\n", load_limit);
+
       printf(".");
-      // zz = clock();
-      // printf("-> %u", f_perf.addref_clocks); //PROBLEM WITH REFS!!
-      // f_perf.addref_clocks = 0;
-      // printf("%u\n", cparse);
-      // printf("%s\n", itag->elename);
-      // aa = clock();
-      // cparse = 0;
     }
 
     if (i == 0)
@@ -1248,14 +1205,8 @@ int main(int argc, char **argv)
 
   clock_t end = clock();
 
-  if (XP_DEBUG)
-  {
-    printf("\n--***--\nRecuento de tiempos\n\n");
-    printf("Total:\t%lu clocks\n", (long unsigned)end - begin);
-    printf("Next tag:\t%lu clocks\t%lu calls\n", (long unsigned)f_perf.get_next_clocks, (long unsigned)f_perf.get_next_calls);
-    printf("Parsing:\t%lu clocks\t%lu calls\n", (long unsigned)f_perf.parse_clocks, (long unsigned)f_perf.parse_calls);
-    printf("Ele_merge:\t%lu clocks\t%lu calls\n", (long unsigned)f_perf.elemerge_clocks, (long unsigned)f_perf.elemerge_calls);
-  }
+  printf("\n--***--\n");
+  funspeed_print(XP_DEBUG);
 
   html_result(&arglist);
 
