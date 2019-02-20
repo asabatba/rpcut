@@ -1042,7 +1042,7 @@ void html_result(struct t_args arglist)
   FILE *f = fopen("resultados.html", "wb");
   assert(f);
 
-  fprintf(f, html_header);
+  fprintf(f, "%s", html_header);
   fprintf(f, "<h2>%s -> %s</h2>", arglist.input, arglist.output);
   fprintf(f, "<h3>aplicaciones eliminadas: ");
   for (i = 0; i < arglist.napps; i++)
@@ -1051,7 +1051,7 @@ void html_result(struct t_args arglist)
   }
   fprintf(f, "</h3>\n");
 
-  fprintf(f, body_header);
+  fprintf(f, "%s" , body_header);
   fprintf(f, "<tbody>\n");
 
   for (i = 0; root_elements[i]; i++)
@@ -1096,7 +1096,7 @@ void html_result(struct t_args arglist)
   }
   fprintf(f, "</tbody>\n");
 
-  fprintf(f, html_footer);
+  fprintf(f, "%s", html_footer);
 
   fclose(f);
 
@@ -1188,7 +1188,7 @@ int main(int argc, char **argv)
 
   itag->next_tag = 0;
 
-  printf(" completado!\n(%I64u elementos)\n", i);
+  printf(" completado!\n(%I64lu elementos)\n", (long unsigned)i);
 
   // loop que busca relaciones entre elementos de distintas capas
   for (i = 0; i < logical_table_source_counter; i++)
@@ -1212,6 +1212,7 @@ int main(int argc, char **argv)
   funspeed_print(XP_DEBUG);
 
   // export a html de los resultados
+  printf("Se exportan los resultados a html.\n");
   html_result(arglist);
 
   printf("\n--***--\n");
