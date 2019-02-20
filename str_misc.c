@@ -83,10 +83,9 @@ size_t str_replace(char *string, char a, char b)
 }
 
 // returns 1 if app is in the list
-int str_in_list(char app[static 1], char **list)
+int str_in_list(char *app, char **list)
 {
   size_t i;
-
   // printf("\tcheck if %s in list...", app);
 
   for (i = 0; list[i]; i++)
@@ -116,7 +115,7 @@ unsigned long power2(unsigned long exp)
 
 // returns a character if said character c is equal to any of the characters in string 'tokens' (NULL if not)
 
-char is_any_of(char c, const char tokens[static 1])
+char is_any_of(char c, const char *tokens)
 {
   size_t i;
 
@@ -132,7 +131,7 @@ char is_any_of(char c, const char tokens[static 1])
 }
 
 // version un poco mas lenta!
-char is_any_of2(char c, const char tokens[static 1])
+char is_any_of2(char c, const char *tokens)
 {
 
   if (strchr(tokens, c))
@@ -148,7 +147,7 @@ char is_any_of2(char c, const char tokens[static 1])
 // copia todos los caracteres desde source hasta dest,
 //  hasta chocar contra algun token (o NULL char)
 //   (o hasta escribir n caracteres en dest)
-char *copy_until_n(char *dest, char source[static 1], const char tokens[static 1], size_t n)
+char *copy_until_n(char *dest, char *source, const char *tokens, size_t n)
 {
 
   if (tokens[1] == '\0')
@@ -170,7 +169,7 @@ char *copy_until_n(char *dest, char source[static 1], const char tokens[static 1
   return source + i;
 }
 
-char *copy_until_chr_n(char *dest, char source[static 1], const char token, size_t n)
+char *copy_until_chr_n(char *dest, char *source, const char token, size_t n)
 {
 
   size_t i;
@@ -188,7 +187,7 @@ char *copy_until_chr_n(char *dest, char source[static 1], const char token, size
 }
 
 // version anterior, un poco mas lenta en general
-char *copy_until_n2(char *dest, char source[static 1], const char tokens[static 1], size_t n)
+char *copy_until_n2(char *dest, char *source, const char *tokens, size_t n)
 {
 
   size_t i;
@@ -206,7 +205,7 @@ char *copy_until_n2(char *dest, char source[static 1], const char tokens[static 
 }
 
 // just a wrapper
-char *skip_until(char source[static 1], const char tokens[static 1])
+char *skip_until(char *source, const char *tokens)
 {
   // return copy_until(0, source, tokens);
   size_t i;
@@ -220,7 +219,7 @@ char *skip_until(char source[static 1], const char tokens[static 1])
 }
 
 // skip source as long as it's just tokens
-char *skip_all(char source[static 1], const char tokens[static 1])
+char *skip_all(char *source, const char *tokens)
 {
 
   size_t i;
@@ -233,7 +232,7 @@ char *skip_all(char source[static 1], const char tokens[static 1])
 
 // ignore eveything between [start] and [end] strings
 
-char *ignore_between(char string[static 1], const char start[static 1], const char end[static 1])
+char *ignore_between(char *string, const char *start, const char *end)
 {
   int startlen = strlen(start);
 
@@ -251,7 +250,7 @@ char *ignore_between(char string[static 1], const char start[static 1], const ch
 }
 
 // usage:  string = strip_whitespace(string);
-char *strip_whitespace(char string[static 1])
+char *strip_whitespace(char *string)
 {
   size_t i, j, k;
   size_t length = strlen(string);
@@ -281,7 +280,7 @@ char *strip_whitespace(char string[static 1])
 
 // permanently modifies the string [source] so every instance
 //   of chars between [start] and [end] is ignored
-char *skip_between(char source[static 1], const char start[static 1], const char end[static 1])
+char *skip_between(char *source, const char *start, const char *end)
 {
 
   size_t i, j = 0;
