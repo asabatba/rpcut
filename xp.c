@@ -33,7 +33,7 @@ typedef uint32_t oid_t;
 struct Buffer
 {
   char *buffer;
-  char *cursor;
+  char *cur;
   size_t size;
 };
 
@@ -44,7 +44,10 @@ struct Buffer *file_to_buffer(const char *filename)
 
   FILE *f = fopen(filename, "rb");
   if (!f)
-    return 0;
+  {
+    printf("No se puede abrir el fichero '%s'.\n", filename);
+    return NULL;
+  }
 
   // tamaño del fichero (num de bytes)
   fseek(f, 0, SEEK_END);
@@ -54,17 +57,22 @@ struct Buffer *file_to_buffer(const char *filename)
   fseek(f, 0, SEEK_SET);
 
   b->buffer = malloc(b->size + 1);
-  b->cursor = b->buffer;
   if (!b->buffer)
   {
     // ha fallado la asignacion de memoria para el fichero
-    printf("malloc ha fallado para %s\n", filename);
+    printf("La asignacion de memoria malloc ha fallado para '%s'.\n", filename);
+    return NULL;
   }
   size_t i = fread(b->buffer, b->size, 1, f);
   fclose(f);
 
   if (!i)
-    return 0;
+  {
+    printf("No se ha podido leer '%s' (o su longitud es cero).\n", filename);
+    return NULL;
+  }
+
+  b->cur = b->buffer;
 
   return b;
 }
@@ -533,7 +541,7 @@ char *get_next_tag(struct Buffer *source)
 
   char *start, *cur;
 
-  start = strchr(source->buffer, '<');
+  start = strchr(source->cur, '<');
 
   // printf("%.*s \n", 20, start);
 
@@ -545,12 +553,11 @@ char *get_next_tag(struct Buffer *source)
   // copy the element type to the closing_tag string, then add '>' (e.g. "</PresentationColumn>")
   cur = copy_until(closing_tag + 2, cur, " >");
   strcat(closing_tag, ">");
-
-  assert(cur);
+  // assert(cur);
 
   cur = strstr(cur, closing_tag);
 
-  assert(cur);
+  // assert(cur);
   cur = skip_until(cur, "\r\n");
   assert(cur);
 
@@ -560,7 +567,7 @@ char *get_next_tag(struct Buffer *source)
   // move the buffer position
   ++cur;
   cur = skip_all(cur, "\r\n ");
-  source->buffer = cur;
+  source->cur = cur;
 
   funspeed_update(GET_NEXT_TAG, begin, XP_DEBUG);
 
@@ -685,13 +692,21 @@ void save_xml(FILE *oxml, Element *first_tag, struct Buffer *input_buffer)
     }
   }
 
-  input_buffer->buffer = strstr(input_buffer->buffer, "<");
-  for (i = 0; *input_buffer->buffer; i++)
+  // incluye toda la parte final del XML
+  input_buffer->cur = strchr(input_buffer->cur, '<');
+
+  if (strstr(input_buffer->cur, "</DECLARE>") == NULL)
   {
-    //printf("->(%c)[%u]\n", *input_buffer->buffer, *input_buffer->buffer);
-    fputc(*input_buffer->buffer, oxml);
-    ++input_buffer->buffer;
+    printf("Error: No se ha detectado la etiqueta final </DECLARE>.\n");
+    exit(EXIT_FAILURE);
   }
+
+  for (i = 0; *input_buffer->cur; i++)
+  {
+    fputc(*input_buffer->cur, oxml);
+    ++input_buffer->cur;
+  }
+
   return;
 }
 
@@ -713,7 +728,7 @@ char *parse_refs(char *cur, Element *ctag)
   for (i = 0; *cur != '\0'; i++)
   {
 
-    lt = strstr(cur, "<");
+    lt = strchr(cur, '<');
 
     if (!lt)
       break;
@@ -738,7 +753,7 @@ char *parse_refs(char *cur, Element *ctag)
     // tag tipo Ref*** (nos interesa!)
     if (strncmp(cur, "<Ref", 4) == 0)
     {
-      gt = strstr(cur, ">");
+      gt = strchr(cur, '>');
       cur = strstr(cur, " id=\"");
 
       // comprobar que la id sea de la Ref y no nos hemos pasado
@@ -972,7 +987,7 @@ void logical_table_source_parse(Element *tsource /*, unsigned long ref_ptable_id
   database->physical = database;
 }
 
-void html_result(t_args *arglist)
+void html_result(struct t_args *arglist)
 {
 
   // Element *iter;
@@ -1088,53 +1103,54 @@ int main(int argc, char **argv)
 {
   size_t i;
 
-  /*
-  char *memstring = malloc(100);
-  strcpy(memstring, " first!!!.\t\t\r\n.second. \t\n\r\n   ") ;
-  strip_whitespace(memstring);
-  exit(0);
-  */
-
-  t_args arglist = get_args(argc, argv);
+  // funcion que carga los argumentos en el struct arglist
+  struct t_args arglist = get_args(argc, argv);
 
   clock_t begin = clock();
 
+  // carga del fichero input XML
   struct Buffer *input_buffer = file_to_buffer(arglist.input);
 
-  if (input_buffer == 0)
+  if (input_buffer == NULL)
   {
     printf("Error: Ha fallado la carga del fichero XML\n");
     return EXIT_FAILURE;
   }
 
-  // printf("Se ha copiado el fichero XML a la memoria\n");
-  // Buffer *output_buffer = empty_buffer(WRITE_BUF_SIZE);
-  char *rawtag = 0;
-
+  // open del fichero output XML
   printf("El fichero de salida es %s\n", arglist.output);
   FILE *oxml = fopen(arglist.output, "wb");
-  assert(oxml);
-
-  char *header_end = strstr(input_buffer->buffer, "<DECLARE>") + 9;
-  // printf("header end set\n");
-
-  for (i = 0; input_buffer->buffer != header_end; i++)
+  if (oxml == NULL)
   {
-    fputc(*input_buffer->buffer, oxml);
-    ++input_buffer->buffer;
+    printf("Error: No se ha podido abrir el fichero de salida %s\n", arglist.output);
+    exit(EXIT_FAILURE);
   }
+
+  // buscamos la etiqueta <DECLARE>
+  char *header_end = strstr(input_buffer->buffer, "<DECLARE>");
+  if (header_end == NULL)
+  {
+    printf("Error: No se ha encontrado la etiqueta <DECLARE> en el XML de entrada.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  // incrementamos este pointer para que incluya la etiqueta <DECLARE>
+  header_end += strlen("<DECLARE>");
+  size_t header_size = header_end - input_buffer->buffer;
+
+  fwrite(input_buffer->buffer, 1, header_size, oxml);
   fputc('\n', oxml);
 
-  input_buffer->buffer = strstr(input_buffer->buffer, "<");
+  input_buffer->cur = strchr(header_end, '<');
 
   Element *first_tag = 0;
   Element *itag = 0;
 
   printf("Empieza el parseo del XML -> ");
-  // clock_t aa, zz, cparse = 0, cparsea;
-  // aa = clock();
-  size_t load_limit = 256;
+
+  size_t load_limit = 1024;
   Element *prev_tag = 0;
+  char *rawtag = 0;
 
   for (i = 0;; i++)
   {
@@ -1146,15 +1162,12 @@ int main(int argc, char **argv)
       break;
     }
 
-    // cparsea = clock();
     itag = tag_parse(rawtag, arglist.apps);
-    // cparse += clock() - cparsea;
 
     // mostrador de progreso
     if (i % load_limit == 0)
     {
       load_limit = load_limit * 2 - 1;
-
       printf(".");
     }
 
@@ -1165,7 +1178,6 @@ int main(int argc, char **argv)
     else
     {
       prev_tag->next_tag = itag;
-      // printf("assign");
     }
     prev_tag = itag;
 

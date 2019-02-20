@@ -7,6 +7,8 @@
 #include "args.h"
 #include "str_misc.h"
 
+typedef struct t_args t_args;
+
 t_args get_args(int argc, char **argv)
 {
   t_args output = {0};
