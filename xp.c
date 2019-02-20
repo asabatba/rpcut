@@ -546,7 +546,7 @@ char *get_next_tag(struct Buffer *source)
   // printf("%.*s \n", 20, start);
 
   if (!start || start[1] == '/')
-    return 0; //o se ha acabado o hemos chocado con un closing tag fuera de sitio
+    return NULL; //o se ha acabado o hemos chocado con un closing tag fuera de sitio
 
   cur = start + 1;
 
@@ -809,7 +809,10 @@ char *parse_refs(char *cur, Element *ctag)
 Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
 {
   if (!raw)
-    return 0;
+  {
+    printf("Error: Llamada a tag_parse sin 'raw'.\n");
+    return NULL;
+  }
 
   size_t i;
   clock_t begin = clock();
@@ -926,6 +929,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
   return ctag;
 }
 
+// esta funcion busca relaciones entre elementos fisicos, logicos y de psntcion
 void logical_table_source_parse(Element *tsource /*, unsigned long ref_ptable_id*/)
 {
 
@@ -987,7 +991,7 @@ void logical_table_source_parse(Element *tsource /*, unsigned long ref_ptable_id
   database->physical = database;
 }
 
-void html_result(struct t_args *arglist)
+void html_result(struct t_args arglist)
 {
 
   // Element *iter;
@@ -1039,11 +1043,11 @@ void html_result(struct t_args *arglist)
   assert(f);
 
   fprintf(f, html_header);
-  fprintf(f, "<h2>%s -> %s</h2>", arglist->input, arglist->output);
+  fprintf(f, "<h2>%s -> %s</h2>", arglist.input, arglist.output);
   fprintf(f, "<h3>aplicaciones eliminadas: ");
-  for (i = 0; i < arglist->napps; i++)
+  for (i = 0; i < arglist.napps; i++)
   {
-    fprintf(f, "%s ", arglist->apps[i]);
+    fprintf(f, "%s ", arglist.apps[i]);
   }
   fprintf(f, "</h3>\n");
 
@@ -1143,14 +1147,14 @@ int main(int argc, char **argv)
 
   input_buffer->cur = strchr(header_end, '<');
 
-  Element *first_tag = 0;
-  Element *itag = 0;
-
+  // Iteracion de parseo del XML
   printf("Empieza el parseo del XML -> ");
 
   size_t load_limit = 1024;
+  Element *first_tag = 0;
+  Element *itag = 0;
   Element *prev_tag = 0;
-  char *rawtag = 0;
+  char *rawtag = 0; // pointer al inicio de la etiqueta que esta en memoria
 
   for (i = 0;; i++)
   {
@@ -1180,51 +1184,38 @@ int main(int argc, char **argv)
       prev_tag->next_tag = itag;
     }
     prev_tag = itag;
-
-    assert(itag);
   }
 
   itag->next_tag = 0;
 
   printf(" completado!\n(%I64u elementos)\n", i);
 
-  /* logical table source loop */
+  // loop que busca relaciones entre elementos de distintas capas
   for (i = 0; i < logical_table_source_counter; i++)
   {
     logical_table_source_parse(logical_table_source[i]);
   }
 
-  // uint32_t count = 0;
-  // for (iter = first_tag /*first_element[0]*/; iter; iter = iter->next_tag)
-  // {
-  //   count++;
-  // }
-  // printf("afterloop\n");
-  // printf("count: %lu elements", count);
-
   printf("\n--***--\n");
 
   // decide que elementos se quedan y cuales se quitan
-
   ele_decider();
 
   // guarda el output teniendo en cuenta los elemntos que se quitan
   save_xml(oxml, first_tag, input_buffer);
-
   fclose(oxml);
-
-  // clock_t end = clock();
 
   clock_t end = clock();
 
   printf("\n--***--\n");
+  // analisis de velocidad de algunas funciones
   funspeed_print(XP_DEBUG);
 
-  html_result(&arglist);
+  // export a html de los resultados
+  html_result(arglist);
 
-  printf("\n--***--\nHa finalizado la ejecucion (correctamente) tras %f segundos.\n", (double)(end - begin) / CLOCKS_PER_SEC);
-
-  // printf("sizeof Tag: \nsizeof Ele: %I64u\nsizeof Ref: %I64u\n", sizeof(Element), sizeof(Ref));
+  printf("\n--***--\n");
+  printf("Ha finalizado la ejecucion (correctamente) tras %f segundos.\n", (double)(end - begin) / CLOCKS_PER_SEC);
 
   exit(EXIT_SUCCESS);
 }
