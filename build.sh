@@ -1,1 +1,1 @@
-gcc -Wall -O3 -o xplin xp.c speedtest.c args.c str_misc.c
+gcc -Wall -O3 -o xplin xp.c speedtest.c args.c strmsc.c
