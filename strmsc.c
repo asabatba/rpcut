@@ -1,9 +1,11 @@
+// #pragma once
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
-#include "str_misc.h"
+#include "strmsc.h"
 
 // leaves only ANSI alphabet characters (a-z and A-Z)
 //   and returns new length

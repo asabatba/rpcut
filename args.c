@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "args.h"
-#include "str_misc.h"
+#include "strmsc.h"
 
 typedef struct t_args t_args;
 

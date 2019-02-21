@@ -1,13 +1,17 @@
+// #pragma once
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <time.h>
 #include <assert.h>
+#include <stdint.h>
 
+#include "xp.h"
 #include "args.h"
-#include "str_misc.h"
+#include "strmsc.h"
 #include "speedtest.h"
+
 
 // #define MAX_STR_SIZE 128
 #define MAX_ID_SIZE 16
@@ -27,15 +31,6 @@
 
 #define INVERSE_MODE 0 // modo "dejar solo aplicaciones indicadas"
 
-typedef uint16_t hash_t;
-typedef uint32_t oid_t;
-
-struct Buffer
-{
-  char *buffer;
-  char *cur;
-  size_t size;
-};
 
 // carga el fichero <filename> en el struct Buffer
 struct Buffer *file_to_buffer(const char *filename)
@@ -101,65 +96,6 @@ oid_t encode_id(char *strid)
   return id;
 }
 
-struct Tag;
-
-typedef struct Ref
-{
-  char *start;
-  unsigned long length; // ref max size??
-
-  struct Element *to;   // formerly element
-  struct Element *from; // formerly parent
-
-  struct Ref *next_to;   // formerly just next
-  struct Ref *next_from; // did not exist
-
-  char removed;
-  // struct Element *parent;
-} Ref;
-
-// IdList *subindex_idl[256];
-
-typedef struct Element
-{
-  unsigned long id;
-  // struct Tag *tag;
-
-  // inherited from Tag struct
-  char *raw;
-  unsigned long rawsize;
-
-  char *tagname;
-  char *appname;
-  char *elename;
-
-  char removal;
-  char root;
-
-  int16_t refcount;
-  struct Ref *ref;    // elements that reference the CURRENT element
-  struct Ref *ref_to; // elements that the current element references
-
-  struct Element *next_tag; // next tag, as read from xml
-
-  // struct Element *next; // next element in order of creation
-  struct Element *hash_next;
-  // struct Element *last;
-  struct Element *hash_last;
-  // unsigned long hast_size;
-
-  struct Element *parent;
-  struct Element *child;
-  struct Element *sibling;
-
-  // struct Element *logical_table_source;
-  // struct Element *ref_physical_table;
-
-  struct Element *physical;
-  struct Element *logical;
-  // struct Element *presentation;
-
-} Element;
 
 Element *root_elements[ELEMENT_HASH_SIZE]; // might as well reuse EHS
 Element *first_element[ELEMENT_HASH_SIZE];
@@ -507,13 +443,6 @@ void extract_app(char *dest, const char *source)
   return;
 }
 
-enum attribute_type
-{
-  ID,
-  PARENT_ID,
-  NAME,
-  OTHER
-};
 
 enum attribute_type get_attr_type(const char *s)
 {
@@ -991,7 +920,8 @@ void logical_table_source_parse(Element *tsource /*, unsigned long ref_ptable_id
   database->physical = database;
 }
 
-void html_result(struct t_args arglist)
+
+void html_result(struct t_args arglist, struct Element **root_elements)
 {
 
   // Element *iter;
@@ -1188,7 +1118,7 @@ int main(int argc, char **argv)
 
   itag->next_tag = 0;
 
-  printf(" completado!\n(%I64lu elementos)\n", (long unsigned)i);
+  printf(" completado!\n(%lu elementos)\n", (long unsigned)i);
 
   // loop que busca relaciones entre elementos de distintas capas
   for (i = 0; i < logical_table_source_counter; i++)
@@ -1213,7 +1143,7 @@ int main(int argc, char **argv)
 
   // export a html de los resultados
   printf("Se exportan los resultados a html.\n");
-  html_result(arglist);
+  html_result(arglist, root_elements);
 
   printf("\n--***--\n");
   printf("Ha finalizado la ejecucion (correctamente) tras %f segundos.\n", (double)(end - begin) / CLOCKS_PER_SEC);
