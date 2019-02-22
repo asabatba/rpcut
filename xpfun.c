@@ -34,6 +34,8 @@ Element *first_element[ELEMENT_HASH_SIZE];
 Element *logical_table_source[LOGICAL_TABLE_SOURCE_SIZE];
 uint32_t logical_table_source_counter = 0;
 
+// struct EleTypeRel element_type_list[32] = {{0, "Undefined"}, {1, "Database"}};
+
 // carga el fichero <filename> en el struct Buffer
 struct Buffer *file_to_buffer(const char *filename)
 {
@@ -640,7 +642,7 @@ void ele_decider()
                 // printf("%s has sibling %x and parent %x\n", jtag->tagname, jtag->sibling, jtag->parent);
 
                 if (XP_DEBUG)
-                    fprintf(tree_xml, "%.*s%s (id=%lu)\n", depth, "\t\t\t\t\t", jter->tagname, jter->id); // DEBUG ARBOL
+                    fprintf(tree_xml, "%.*s%s (id=%u)\n", depth, "\t\t\t\t\t", jter->tagname, jter->id); // DEBUG ARBOL
                 jter->removal = 1;
 
                 ref_erase_all(jter);

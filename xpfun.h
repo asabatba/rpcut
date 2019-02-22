@@ -13,12 +13,10 @@ struct Buffer
   size_t size;
 };
 
-struct Tag;
-
 typedef struct Ref
 {
   char *start;
-  unsigned long length; // ref max size??
+  uint32_t length; // ref max size??
 
   struct Element *to;   // formerly element
   struct Element *from; // formerly parent
@@ -26,7 +24,7 @@ typedef struct Ref
   struct Ref *next_to;   // formerly just next
   struct Ref *next_from; // did not exist
 
-  char removed;
+  int8_t removed;
   // struct Element *parent;
 } Ref;
 
@@ -34,19 +32,17 @@ typedef struct Ref
 
 typedef struct Element
 {
-  unsigned long id;
-  // struct Tag *tag;
+  oid_t id;
 
-  // inherited from Tag struct
   char *raw;
-  unsigned long rawsize;
+  uint32_t rawsize;
 
   char *tagname;
   char *appname;
   char *elename;
 
-  char removal;
-  char root;
+  int8_t removal;
+  int8_t root;
 
   int16_t refcount;
   struct Ref *ref;    // elements that reference the CURRENT element
@@ -54,22 +50,15 @@ typedef struct Element
 
   struct Element *next_tag; // next tag, as read from xml
 
-  // struct Element *next; // next element in order of creation
   struct Element *hash_next;
-  // struct Element *last;
   struct Element *hash_last;
-  // unsigned long hast_size;
 
   struct Element *parent;
   struct Element *child;
   struct Element *sibling;
 
-  // struct Element *logical_table_source;
-  // struct Element *ref_physical_table;
-
   struct Element *physical;
   struct Element *logical;
-  // struct Element *presentation;
 
 } Element;
 
@@ -80,6 +69,35 @@ enum attribute_type
   NAME,
   OTHER
 };
+
+// enum EleType
+// {
+//   UNDEFINED,
+//   DATABASE,
+//   PHYSICAL_TABLE,
+//   PHYSICAL_COLUMN,
+//   CONNECTION_POOL,
+//   VARIABLE,
+//   SCHEMA,
+//   INIT_BLOCK,
+//   BUSINESS_MODEL,
+//   LOGICAL_TABLE,
+//   LOGICAL_COLUMN,
+//   PRESENTATION_CATALOG,
+//   PRESENTATION_TABLE,
+//   PRESENTATION_COLUMN,
+//   PRESENTATION_HIERARCHY,
+//   PRESENTATION_LEVEL,
+//   USER,
+//   GROUP
+
+// };
+
+// struct EleTypeRel {
+//   enum EleType code;
+//   char name[32];
+// };
+
 
 struct Buffer *file_to_buffer(const char *filename);
 
