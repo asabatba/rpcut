@@ -59,7 +59,7 @@ void funspeed_update(enum function_name function, clock_t start, int debug)
     return;
 };
 
-void funspeed_print(int debug)
+void funspeed_print_dbg(int debug)
 {
 
     if (!debug)

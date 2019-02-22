@@ -1,5 +1,7 @@
+
 #include <stdint.h>
 
+#include "args.h"
 
 typedef uint16_t hash_t;
 typedef uint32_t oid_t;
@@ -10,7 +12,6 @@ struct Buffer
   char *cur;
   size_t size;
 };
-
 
 struct Tag;
 
@@ -72,7 +73,6 @@ typedef struct Element
 
 } Element;
 
-
 enum attribute_type
 {
   ID,
@@ -80,3 +80,22 @@ enum attribute_type
   NAME,
   OTHER
 };
+
+struct Buffer *file_to_buffer(const char *filename);
+
+int parse_header(struct Buffer *buf, FILE *oxml);
+
+char *get_next_tag(struct Buffer *source);
+
+Element *tag_parse(char *raw, char **applist);
+
+void ele_decider();
+
+void save_xml(FILE *oxml, Element *first_tag, struct Buffer *input_buffer);
+
+void html_result(struct t_args);
+
+void funspeed_print();
+
+// loop busca relaciones entre elementos
+void logical_table_source_loop();
