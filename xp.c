@@ -3,14 +3,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <omp.h>
 
 #include "xpfun.h"
-// #include "args.h"
-// #include "strmsc.h"
+#include "args.h"
+#include "strmsc.h"
 
 int main(int argc, char **argv)
 {
   size_t i;
+
+  printf("sizeof Element: %I64u\n", sizeof(Element));
 
   // funcion que carga los argumentos en el struct arglist
   struct t_args arglist = get_args(argc, argv);

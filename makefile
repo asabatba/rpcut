@@ -6,6 +6,10 @@ xp:
 #	del xpc_inv.exe
 #	upx xp_inv.exe -9 -o xpc_inv.exe
 
+omp:
+	gcc -Wall -g -fopenmp -pg -o xp xp.c xpfun.c args.c strmsc.c speedtest.c -I.
+
+
 inv:
 	gcc -Wall -O3 -o xp_inv xp.c xpfun.c args.c strmsc.c speedtest.c -I.
 	del xpc_inv.exe

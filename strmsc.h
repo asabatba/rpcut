@@ -1,12 +1,20 @@
+#pragma once
 
 #define copy_until(dest, source, tok) copy_until_n(dest, source, tok, 0)
+
+struct Buffer
+{
+    char *buffer;
+    char *cur;
+    size_t size;
+};
 
 size_t str_to_alpha(char *input);
 
 size_t left(char *input, int newlength);
 
 // strncpy que termina el string dest con un caracter nulo
-char * strscpy(char *dest, const char *src, size_t len);
+char *strscpy(char *dest, const char *src, size_t len);
 
 void upper(char *input);
 

@@ -1,3 +1,4 @@
+#pragma once
 
 #include <stdint.h>
 
@@ -6,12 +7,6 @@
 typedef uint16_t hash_t;
 typedef uint32_t oid_t;
 
-struct Buffer
-{
-  char *buffer;
-  char *cur;
-  size_t size;
-};
 
 typedef struct Ref
 {

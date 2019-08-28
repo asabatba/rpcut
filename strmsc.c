@@ -1,4 +1,3 @@
-// #pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -176,7 +175,7 @@ char *copy_until_chr_n(char *dest, char *source, const char token, size_t n)
 
   size_t i;
 
-  for (i = 0; source[i] && source[i]!=token; i++)
+  for (i = 0; source[i] && source[i] != token; i++)
   {
     if (n && i == n)
       break;

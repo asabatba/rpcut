@@ -2,10 +2,10 @@
 
 
 REM call gcc xp.c -o xp.exe || goto err
-call windres ico.rc -O coff -o ico.res
-call gcc -o xp xp.o ico.res || goto err
+REM call windres ico.rc -O coff -o ico.res
+REM call gcc -o xp xp.o ico.res || goto err
 
-call g++ -o xp xp.o ico.res
+REM call g++ -o xp xp.o ico.res
 
 
 REM set /p apps="Apps: "

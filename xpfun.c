@@ -12,9 +12,10 @@
 
 #define MAX_ID_SIZE 16
 #define MAX_TAG_NAME 32 // names like PhysicalColumn, etc
-#define MAX_TAG_SIZE 1024
+#define MAX_TAG_SIZE 1024 // ningun nombre o valor de atributo puede ser superior en longitud a este numero. solo se hace malloc una vez
 #define APP_NAME_SIZE 6 // caracteres que tiene una aplicacion
-#define ELEMENT_NAME_SIZE 32
+#define ELEMENT_NAME_SIZE 32 // longitud maxima del nombre de los objectos del RPD
+
 // #define READ_BUF_SIZE 1024 * 1000         //bytes
 // #define WRITE_BUF_SIZE 1024 * 1000 * 1000 //1 MB
 
@@ -23,7 +24,7 @@
 
 #define ELEMENT_HASH_MASK (ELEMENT_HASH_SIZE - 1)
 
-#define XP_DEBUG 0 // crea el fichero tree.txt, cronometra las funciones, etc, si su valor es distinto de 0
+#define XP_DEBUG 1 // crea el fichero tree.txt, cronometra las funciones, etc, si su valor es distinto de 0
 
 #define INVERSE_MODE 0 // modo "dejar solo aplicaciones indicadas"
 
@@ -482,7 +483,7 @@ char *get_next_tag(struct Buffer *source)
     clock_t begin = clock();
 
     // closing_tag = "</"; // i think this is pretty bad. yikes
-    strcpy(closing_tag, "</");
+    strcpy(closing_tag, "</"); //snprintf ??
 
     char *start, *cur;
 
@@ -817,7 +818,7 @@ Element *tag_parse(/*Element *ctag*/ char *raw, char **applist)
 {
     if (!raw)
     {
-        printf("Error: Llamada a tag_parse sin 'raw'.\n");
+        printf("Error: Llamada a tag_parse sin contenido 'raw'.\n");
         return NULL;
     }
 
